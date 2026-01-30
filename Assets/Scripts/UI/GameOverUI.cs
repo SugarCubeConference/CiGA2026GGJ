@@ -12,6 +12,7 @@ namespace MaskGame.UI
     {
         [Header("UI元素")]
         [SerializeField] private TextMeshProUGUI titleText;
+        [SerializeField] private TextMeshProUGUI messageText;
         [SerializeField] private TextMeshProUGUI scoreText;
         [SerializeField] private Button restartButton;
         [SerializeField] private Button quitButton;
@@ -37,21 +38,29 @@ namespace MaskGame.UI
         {
             if (titleText != null)
             {
-                titleText.text = "社死！";
+                titleText.text = "GAME OVER";
+            }
+
+            if (messageText != null)
+            {
+                messageText.text = "QAQ";
             }
 
             if (scoreText != null)
             {
-                // 从PlayerPrefs读取统计数据
                 int correctAnswers = PlayerPrefs.GetInt("CorrectAnswers", 0);
                 int totalAnswers = PlayerPrefs.GetInt("TotalAnswers", 0);
 
-                scoreText.text = $"答对 {correctAnswers}/{totalAnswers} 题";
+                scoreText.text = $"Score: {correctAnswers}/{totalAnswers}";
             }
         }
 
         private void OnRestart()
         {
+            PlayerPrefs.DeleteKey("CorrectAnswers");
+            PlayerPrefs.DeleteKey("TotalAnswers");
+            PlayerPrefs.DeleteKey("GameWon");
+
             SceneManager.LoadScene("Main");
         }
 

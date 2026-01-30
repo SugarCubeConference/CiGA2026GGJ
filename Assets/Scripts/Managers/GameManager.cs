@@ -273,8 +273,7 @@ namespace MaskGame.Managers
         private IEnumerator LoadVictoryScene()
         {
             yield return new WaitForSeconds(1.5f);
-            // 可以创建一个胜利场景，暂时跳转GameOver
-            SceneManager.LoadScene("GameOver");
+            SceneManager.LoadScene("GameWin");
         }
 
         /// <summary>
