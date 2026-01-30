@@ -40,7 +40,7 @@ namespace MaskGame.Managers
         public UnityEvent<int> OnBatteryChanged = new UnityEvent<int>();
         public UnityEvent<float> OnTimeChanged = new UnityEvent<float>();
         public UnityEvent<EncounterData> OnNewEncounter = new UnityEvent<EncounterData>();
-        public UnityEvent<bool> OnAnswerResult = new UnityEvent<bool>();
+        public UnityEvent<bool, string> OnAnswerResult = new UnityEvent<bool, string>(); // 添加反馈文本参数
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
 
@@ -134,7 +134,11 @@ namespace MaskGame.Managers
         /// </summary>
         private void LoadNextEncounter()
         {
-            if (encounterPool.Count == 0) return;
+            if (encounterPool.Count == 0)
+            {
+                UnityEngine.Debug.LogWarning("GameManager: 对话池为空，请在Inspector中添加EncounterData！");
+                return;
+            }
 
             // 循环使用对话池
             if (shuffledEncounters.Count == 0)
@@ -175,7 +179,22 @@ namespace MaskGame.Managers
                 correctAnswers++;
             }
 
-            OnAnswerResult.Invoke(isCorrect);
+            // 获取选项的反馈文本
+            string feedbackText = "";
+            if (!isTimeout && currentEncounter.optionFeedbacks != null)
+            {
+                int selectedIndex = (int)selectedMask;
+                if (selectedIndex >= 0 && selectedIndex < currentEncounter.optionFeedbacks.Length)
+                {
+                    feedbackText = currentEncounter.optionFeedbacks[selectedIndex];
+                }
+            }
+            else if (isTimeout)
+            {
+                feedbackText = "超时了！";
+            }
+            
+            OnAnswerResult.Invoke(isCorrect, feedbackText);
 
             if (!isCorrect)
             {

@@ -17,6 +17,11 @@ namespace MaskGame.Data
         [Header("选项文本")]
         [Tooltip("四个选项的文本描述")]
         public string[] optionTexts = new string[4];
+        
+        [Header("反馈文本")]
+        [Tooltip("四个选项各自的反馈文本（选择后显示）")]
+        [TextArea(1, 2)]
+        public string[] optionFeedbacks = new string[4];
 
         [Header("朋友信息")]
         [Tooltip("朋友分组（如：亲密朋友、同事、长辈等）")]
@@ -25,12 +30,5 @@ namespace MaskGame.Data
         [Header("正确答案")]
         [Tooltip("此对话需要的正确面具")]
         public MaskType correctMask;
-
-        [Header("反馈文本（可选）")]
-        [Tooltip("选对后的短反馈")]
-        public string successFeedback;
-        
-        [Tooltip("选错后的短反馈")]
-        public string failureFeedback;
     }
 }
