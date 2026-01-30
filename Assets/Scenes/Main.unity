@@ -379,7 +379,7 @@ MonoBehaviour:
   m_text: "\u6587\u672C\u6846\u6587\u672C\u6846"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
-  m_sharedMaterial: {fileID: 4460890410741881092, guid: ac42463d5c906224a830122683c00cbc, type: 2}
+  m_sharedMaterial: {fileID: -2387781322405048105, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -784,7 +784,7 @@ MonoBehaviour:
   m_text: Day 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
-  m_sharedMaterial: {fileID: 4460890410741881092, guid: ac42463d5c906224a830122683c00cbc, type: 2}
+  m_sharedMaterial: {fileID: -2387781322405048105, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1409,14 +1409,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 0.54901963, g: 0.54901963, b: 0.54901963, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1638,6 +1638,7 @@ MonoBehaviour:
   - {fileID: 1733518124}
   - {fileID: 401798010}
   - {fileID: 676934206}
+  enableTypewriter: 1
 --- !u!1 &1246130617
 GameObject:
   m_ObjectHideFlags: 0
@@ -1782,7 +1783,7 @@ MonoBehaviour:
   m_text: "\u6587\u672C\u6846\u6587\u672C\u6846"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
-  m_sharedMaterial: {fileID: 4460890410741881092, guid: ac42463d5c906224a830122683c00cbc, type: 2}
+  m_sharedMaterial: {fileID: -2387781322405048105, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2192,7 +2193,7 @@ MonoBehaviour:
   m_text: ///////
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
-  m_sharedMaterial: {fileID: 4460890410741881092, guid: ac42463d5c906224a830122683c00cbc, type: 2}
+  m_sharedMaterial: {fileID: -2387781322405048105, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

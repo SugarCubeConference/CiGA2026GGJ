@@ -67,29 +67,6 @@ namespace MaskGame.UI
             }
         }
 
-            if (messageText != null)
-            {
-                float accuracy = total > 0 ? (float)correct / total : 0;
-
-                if (accuracy >= 0.9f)
-                {
-                    messageText.text = "PERFECT!";
-                }
-                else if (accuracy >= 0.7f)
-                {
-                    messageText.text = "GOOD!";
-                }
-                else if (accuracy >= 0.5f)
-                {
-                    messageText.text = "OK~";
-                }
-                else
-                {
-                    messageText.text = "...";
-                }
-            }
-        }
-
         private void OnRestart()
         {
             PlayerPrefs.DeleteKey("CorrectAnswers");
