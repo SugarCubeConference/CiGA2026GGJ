@@ -7,12 +7,25 @@ using UnityEngine.SceneManagement;
 
 namespace MaskGame.Managers
 {
+    public enum AnswerOutcome
+    {
+        Correct,
+        Wrong,
+        Timeout,
+    }
+
     /// <summary>
     /// 游戏管理器 - 控制游戏流程、天数、难度
     /// </summary>
     public class GameManager : MonoBehaviour
     {
-        private const string EncounterRes = "Encounters";
+        private enum GameState
+        {
+            Await,
+            Resolve,
+            DayEnd,
+            GameEnd,
+        }
 
         public static GameManager Instance { get; private set; }
 
@@ -33,7 +46,7 @@ namespace MaskGame.Managers
         private int currentEncounterIndex = 0;
         private int socialBattery;
         private float remainingTime;
-        private bool isGameOver = false;
+        private GameState state;
 
         // 统计数据
         private int totalAnswers = 0;
@@ -48,7 +61,8 @@ namespace MaskGame.Managers
         public UnityEvent<int> OnBatteryChanged = new UnityEvent<int>();
         public UnityEvent<float> OnTimeChanged = new UnityEvent<float>();
         public UnityEvent<EncounterData> OnNewEncounter = new UnityEvent<EncounterData>();
-        public UnityEvent<bool, bool, string> OnAnswerResult = new UnityEvent<bool, bool, string>();
+        public UnityEvent<AnswerOutcome, string> OnAnswerResult =
+            new UnityEvent<AnswerOutcome, string>();
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
 
@@ -57,6 +71,7 @@ namespace MaskGame.Managers
             if (Instance == null)
             {
                 Instance = this;
+                state = GameState.Resolve;
             }
             else
             {
@@ -71,7 +86,7 @@ namespace MaskGame.Managers
 
         private void Update()
         {
-            if (isGameOver)
+            if (state != GameState.Await)
                 return;
 
             // 倒计时
@@ -83,7 +98,7 @@ namespace MaskGame.Managers
                 // 时间耗尽 = 选错
                 if (remainingTime <= 0)
                 {
-                    ProcessAnswer(MaskType.Mask1, true); // 超时视为选错
+                    ResolveAnswer(MaskType.Mask1, true);
                 }
             }
         }
@@ -96,7 +111,7 @@ namespace MaskGame.Managers
             currentDay = 1;
             currentEncounterIndex = 0;
             socialBattery = gameConfig.fixedHealth; // 固定4条血
-            isGameOver = false;
+            state = GameState.Resolve;
             totalAnswers = 0;
             correctAnswers = 0;
 
@@ -184,6 +199,7 @@ namespace MaskGame.Managers
 
             OnNewEncounter.Invoke(currentEncounter);
             OnTimeChanged.Invoke(remainingTime);
+            state = GameState.Await;
         }
 
         /// <summary>
@@ -191,9 +207,16 @@ namespace MaskGame.Managers
         /// </summary>
         public void SelectMask(MaskType selectedMask)
         {
-            if (isGameOver)
+            ResolveAnswer(selectedMask, false);
+        }
+
+        private void ResolveAnswer(MaskType selectedMask, bool isTimeout)
+        {
+            if (state != GameState.Await)
                 return;
-            ProcessAnswer(selectedMask, false);
+
+            state = GameState.Resolve;
+            ProcessAnswer(selectedMask, isTimeout);
         }
 
         /// <summary>
@@ -201,10 +224,22 @@ namespace MaskGame.Managers
         /// </summary>
         private void ProcessAnswer(MaskType selectedMask, bool isTimeout)
         {
-            bool isCorrect = !isTimeout && (selectedMask == currentEncounter.correctMask);
+            AnswerOutcome outcome;
+            if (isTimeout)
+            {
+                outcome = AnswerOutcome.Timeout;
+            }
+            else if (selectedMask == currentEncounter.correctMask)
+            {
+                outcome = AnswerOutcome.Correct;
+            }
+            else
+            {
+                outcome = AnswerOutcome.Wrong;
+            }
 
             totalAnswers++;
-            if (isCorrect)
+            if (outcome == AnswerOutcome.Correct)
             {
                 correctAnswers++;
             }
@@ -226,7 +261,7 @@ namespace MaskGame.Managers
 
             OnAnswerResult.Invoke(isCorrect, isTimeout, feedbackText);
 
-            if (!isCorrect)
+            if (outcome != AnswerOutcome.Correct)
             {
                 // 选错或超时 - 扣除社交电池
                 socialBattery -= gameConfig.batteryPenalty;
@@ -257,6 +292,7 @@ namespace MaskGame.Managers
         /// </summary>
         private void CompleteDay()
         {
+            state = GameState.DayEnd;
             OnDayComplete.Invoke();
 
             // 检查是否通关所有天数
@@ -289,21 +325,15 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameWin()
         {
-            isGameOver = true;
-
-            // 保存统计数据
-            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
-            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
-            PlayerPrefs.SetInt("GameWon", 1);
-            PlayerPrefs.Save();
-
-            StartCoroutine(LoadVictoryScene());
+            EndGame(true);
         }
 
-        private IEnumerator LoadVictoryScene()
+        private void SaveStats(bool won)
         {
-            yield return new WaitForSeconds(1.5f);
-            SceneManager.LoadScene("GameWin");
+            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
+            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
+            PlayerPrefs.SetInt("GameWon", won ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         /// <summary>
@@ -311,22 +341,24 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameOver()
         {
-            isGameOver = true;
-            OnGameOver.Invoke();
-
-            // 保存统计数据
-            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
-            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
-            PlayerPrefs.Save();
-
-            // 延迟跳转到失败场景
-            StartCoroutine(LoadGameOverScene());
+            EndGame(false);
         }
 
-        private IEnumerator LoadGameOverScene()
+        private void EndGame(bool won)
+        {
+            state = GameState.GameEnd;
+
+            if (!won)
+                OnGameOver.Invoke();
+
+            SaveStats(won);
+            StartCoroutine(LoadScene(won ? "GameWin" : "GameOver"));
+        }
+
+        private IEnumerator LoadScene(string sceneName)
         {
             yield return new WaitForSeconds(1.5f);
-            SceneManager.LoadScene("GameOver");
+            SceneManager.LoadScene(sceneName);
         }
 
         /// <summary>
