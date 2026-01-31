@@ -64,6 +64,13 @@ namespace MaskGame.UI
 
         private GameManager gameManager;
         private TypewriterEffect typewriterEffect;
+        private Canvas cachedCanvas;
+        private bool hasLoggedMissingTimeSlashText;
+        private int lastSlashCount = -1;
+        private bool lastIsWarning;
+        private string normalSlashColorHex;
+        private string warningSlashColorHex;
+        private string cachedSlashString = "";
 
         private void Awake()
         {
@@ -82,6 +89,10 @@ namespace MaskGame.UI
             gameManager.OnTimeChanged.AddListener(UpdateTime);
             gameManager.OnNewEncounter.AddListener(DisplayEncounter);
             gameManager.OnAnswerResult.AddListener(ShowAnswerFeedback);
+
+            cachedCanvas = GetComponentInParent<Canvas>();
+            normalSlashColorHex = ColorUtility.ToHtmlStringRGB(normalSlashColor);
+            warningSlashColorHex = ColorUtility.ToHtmlStringRGB(warningSlashColor);
 
             // 设置面具按钮
             SetupMaskButtons();
@@ -186,9 +197,13 @@ namespace MaskGame.UI
         {
             if (timeSlashText == null)
             {
-                UnityEngine.Debug.LogWarning(
-                    "UIManager: timeSlashText未null，请在Inspector中连接Text_deadline (TMP)组件！"
-                );
+                if (!hasLoggedMissingTimeSlashText)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        "UIManager: timeSlashText未null，请在Inspector中连接Text_deadline (TMP)组件！"
+                    );
+                    hasLoggedMissingTimeSlashText = true;
+                }
                 return;
             }
 
@@ -196,15 +211,20 @@ namespace MaskGame.UI
             int currentSlashes = Mathf.CeilToInt(remainingTime / timePerSlash);
             currentSlashes = Mathf.Max(0, currentSlashes); // 确保不为负数
 
-            // 生成斜杠字符串
-            string slashString = new string('/', currentSlashes);
-
             // 时间紧急时变红
-            Color slashColor =
-                remainingTime <= warningThreshold ? warningSlashColor : normalSlashColor;
-            string colorHex = ColorUtility.ToHtmlStringRGB(slashColor);
+            bool isWarning = remainingTime <= warningThreshold;
+            if (currentSlashes == lastSlashCount && isWarning == lastIsWarning)
+                return;
 
-            timeSlashText.text = $"<color=#{colorHex}>{slashString}</color>";
+            if (currentSlashes != lastSlashCount)
+            {
+                cachedSlashString = new string('/', currentSlashes);
+                lastSlashCount = currentSlashes;
+            }
+
+            lastIsWarning = isWarning;
+            string colorHex = isWarning ? warningSlashColorHex : normalSlashColorHex;
+            timeSlashText.text = $"<color=#{colorHex}>{cachedSlashString}</color>";
         }
 
         /// <summary>
@@ -336,9 +356,10 @@ namespace MaskGame.UI
             if (string.IsNullOrEmpty(text))
                 return;
 
-            Canvas canvas = GetComponentInParent<Canvas>();
+            Canvas canvas = cachedCanvas != null ? cachedCanvas : GetComponentInParent<Canvas>();
             if (canvas == null)
                 return;
+            cachedCanvas = canvas;
 
             // 创建文本对象
             GameObject floatingObj = new GameObject("FloatingFeedback");

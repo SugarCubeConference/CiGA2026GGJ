@@ -57,7 +57,8 @@ namespace MaskGame.UI
         private Coroutine floatingCoroutine;
         private string fullText;
         private bool isTyping = false;
-        private List<int> richTextIndices = new List<int>(); // 存储富文本标记字符的索引
+        private readonly List<int> floatingCharacterIndices = new List<int>();
+        private TMP_MeshInfo[] cachedMeshInfo;
 
         private void Awake()
         {
@@ -66,6 +67,7 @@ namespace MaskGame.UI
             // 创建AudioSource组件用于播放音效
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
+            audioSource.loop = false;
             audioSource.volume = soundVolume;
         }
 
@@ -82,75 +84,23 @@ namespace MaskGame.UI
         /// </summary>
         public void PlayTypewriter(string text)
         {
-            if (typewriterCoroutine != null)
-            {
-                StopCoroutine(typewriterCoroutine);
-            }
+            StopAllEffectCoroutines();
 
-            fullText = text;
-            DetectRichTextTags(); // 检测富文本标记
+            fullText = text ?? string.Empty;
+            textComponent.text = fullText;
+            textComponent.maxVisibleCharacters = int.MaxValue;
+            RefreshFloatingCharactersAndMeshCache();
+
+            textComponent.maxVisibleCharacters = 0;
             typewriterCoroutine = StartCoroutine(TypewriterCoroutine());
 
-            // 启动漂浮效果
-            if (enableFloatingEffect && richTextIndices.Count > 0)
+            if (enableFloatingEffect && floatingCharacterIndices.Count > 0)
             {
-                if (floatingCoroutine != null)
-                {
-                    StopCoroutine(floatingCoroutine);
-                }
                 floatingCoroutine = StartCoroutine(FloatingEffectCoroutine());
             }
         }
 
-        /// <summary>
-        /// 检测富文本标记的字符范围
-        /// </summary>
-        private void DetectRichTextTags()
-        {
-            richTextIndices.Clear();
-
-            // 检测常见的富文本标签：<b>、<color>、<mark>等
-            string[] startTags = { "<b>", "<color=", "<mark=", "<i>", "<u>", "<s>" };
-            string[] endTags = { "</b>", "</color>", "</mark>", "</i>", "</u>", "</s>" };
-
-            for (int i = 0; i < startTags.Length; i++)
-            {
-                int searchStart = 0;
-                while (searchStart < fullText.Length)
-                {
-                    int startIndex = fullText.IndexOf(startTags[i], searchStart);
-                    if (startIndex == -1)
-                        break;
-
-                    // 找到开始标签后，查找结束标签
-                    int tagEndIndex = fullText.IndexOf(">", startIndex) + 1;
-                    int endIndex = fullText.IndexOf(endTags[i], tagEndIndex);
-
-                    if (endIndex != -1)
-                    {
-                        // 记录标记内容的实际字符位置（不包括标签本身）
-                        for (int j = tagEndIndex; j < endIndex; j++)
-                        {
-                            // 只记录可见字符
-                            if (fullText[j] != '<' && fullText[j] != '>')
-                            {
-                                richTextIndices.Add(j);
-                            }
-                        }
-                        searchStart = endIndex + endTags[i].Length;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 立即显示全部文本（跳过动画）
-        /// </summary>
-        public void SkipToEnd()
+        private void StopAllEffectCoroutines()
         {
             if (typewriterCoroutine != null)
             {
@@ -164,11 +114,54 @@ namespace MaskGame.UI
                 floatingCoroutine = null;
             }
 
+            isTyping = false;
+        }
+
+        private void RefreshFloatingCharactersAndMeshCache()
+        {
+            floatingCharacterIndices.Clear();
+
+            textComponent.ForceMeshUpdate();
+            TMP_TextInfo textInfo = textComponent.textInfo;
+            int characterCount = textInfo.characterCount;
+
+            for (int i = 0; i < characterCount; i++)
+            {
+                TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
+                if (HasFloatingStyle(charInfo))
+                {
+                    floatingCharacterIndices.Add(i);
+                }
+            }
+
+            cachedMeshInfo = textInfo.CopyMeshInfoVertexData();
+        }
+
+        private bool HasFloatingStyle(TMP_CharacterInfo charInfo)
+        {
+            bool hasBold = (charInfo.style & FontStyles.Bold) == FontStyles.Bold;
+            bool hasItalic = (charInfo.style & FontStyles.Italic) == FontStyles.Italic;
+            bool hasUnderline = (charInfo.style & FontStyles.Underline) == FontStyles.Underline;
+
+            return hasBold || hasItalic || hasUnderline;
+        }
+
+        /// <summary>
+        /// 立即显示全部文本（跳过动画）
+        /// </summary>
+        public void SkipToEnd()
+        {
+            if (typewriterCoroutine != null)
+            {
+                StopCoroutine(typewriterCoroutine);
+                typewriterCoroutine = null;
+            }
+
             textComponent.text = fullText;
+            textComponent.maxVisibleCharacters = int.MaxValue;
             isTyping = false;
 
-            // 重新启动漂浮效果
-            if (enableFloatingEffect && richTextIndices.Count > 0)
+            if (enableFloatingEffect && floatingCoroutine == null && floatingCharacterIndices.Count > 0)
             {
                 floatingCoroutine = StartCoroutine(FloatingEffectCoroutine());
             }
@@ -180,33 +173,33 @@ namespace MaskGame.UI
         private IEnumerator TypewriterCoroutine()
         {
             isTyping = true;
-            textComponent.text = "";
 
-            int charIndex = 0;
+            TMP_TextInfo textInfo = textComponent.textInfo;
+            int characterCount = textInfo.characterCount;
+            int frequency = soundFrequency <= 0 ? 1 : soundFrequency;
 
-            while (charIndex < fullText.Length)
+            for (int i = 0; i < characterCount; i++)
             {
-                // 添加下一个字符
-                textComponent.text += fullText[charIndex];
+                textComponent.maxVisibleCharacters = i + 1;
 
-                // 播放打字音效
-                if (typingSound != null && charIndex % soundFrequency == 0)
+                if (typingSound != null && i % frequency == 0)
                 {
                     audioSource.PlayOneShot(typingSound, soundVolume);
                 }
 
-                // 计算延迟时间
                 float delay = charDelay;
-
-                // 标点符号增加延迟
-                char currentChar = fullText[charIndex];
+                char currentChar = textInfo.characterInfo[i].character;
                 if (IsPunctuation(currentChar))
                 {
                     delay += punctuationDelay;
                 }
 
-                yield return new WaitForSeconds(delay);
-                charIndex++;
+                float elapsed = 0f;
+                while (elapsed < delay)
+                {
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                }
             }
 
             isTyping = false;
@@ -220,69 +213,38 @@ namespace MaskGame.UI
         {
             while (true)
             {
-                // 强制更新文本网格
-                textComponent.ForceMeshUpdate();
-
                 TMP_TextInfo textInfo = textComponent.textInfo;
+                int maxVisibleCharacters = textComponent.maxVisibleCharacters;
 
-                // 遍历所有可见字符
-                for (int i = 0; i < textInfo.characterCount; i++)
+                for (int i = 0; i < floatingCharacterIndices.Count; i++)
                 {
-                    TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
+                    int charIndex = floatingCharacterIndices[i];
+                    if (charIndex >= maxVisibleCharacters)
+                        break;
 
-                    // 跳过不可见字符
+                    TMP_CharacterInfo charInfo = textInfo.characterInfo[charIndex];
                     if (!charInfo.isVisible)
                         continue;
 
-                    // 检查当前字符是否在富文本标记范围内
-                    if (IsCharacterInRichText(i, textInfo))
-                    {
-                        int materialIndex = charInfo.materialReferenceIndex;
-                        int vertexIndex = charInfo.vertexIndex;
+                    int materialIndex = charInfo.materialReferenceIndex;
+                    int vertexIndex = charInfo.vertexIndex;
 
-                        Vector3[] vertices = textInfo.meshInfo[materialIndex].vertices;
+                    Vector3[] srcVertices = cachedMeshInfo[materialIndex].vertices;
+                    Vector3[] dstVertices = textInfo.meshInfo[materialIndex].vertices;
 
-                        // 计算波浪偏移
-                        float offset =
-                            Mathf.Sin((Time.time * floatSpeed) + (i * 0.5f)) * floatAmplitude;
+                    float offset =
+                        Mathf.Sin((Time.time * floatSpeed) + (charIndex * 0.5f)) * floatAmplitude;
+                    Vector3 offsetVector = new Vector3(0f, offset, 0f);
 
-                        // 应用偏移到所有4个顶点（每个字符有4个顶点）
-                        vertices[vertexIndex + 0].y += offset;
-                        vertices[vertexIndex + 1].y += offset;
-                        vertices[vertexIndex + 2].y += offset;
-                        vertices[vertexIndex + 3].y += offset;
-                    }
+                    dstVertices[vertexIndex + 0] = srcVertices[vertexIndex + 0] + offsetVector;
+                    dstVertices[vertexIndex + 1] = srcVertices[vertexIndex + 1] + offsetVector;
+                    dstVertices[vertexIndex + 2] = srcVertices[vertexIndex + 2] + offsetVector;
+                    dstVertices[vertexIndex + 3] = srcVertices[vertexIndex + 3] + offsetVector;
                 }
 
-                // 更新顶点数据
-                for (int i = 0; i < textInfo.meshInfo.Length; i++)
-                {
-                    textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
-                    textComponent.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
-                }
-
+                textComponent.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
                 yield return null;
             }
-        }
-
-        /// <summary>
-        /// 检查字符是否在富文本标记范围内
-        /// </summary>
-        private bool IsCharacterInRichText(int characterIndex, TMP_TextInfo textInfo)
-        {
-            // 由于富文本标签会被TMP处理，我们需要检查原始文本位置
-            // 这里简化处理：检查字符是否被标记（可以通过样式检测）
-            if (characterIndex >= textInfo.characterCount)
-                return false;
-
-            TMP_CharacterInfo charInfo = textInfo.characterInfo[characterIndex];
-
-            // 检测是否有特殊样式（粗体、斜体等）
-            bool hasBold = (charInfo.style & FontStyles.Bold) == FontStyles.Bold;
-            bool hasItalic = (charInfo.style & FontStyles.Italic) == FontStyles.Italic;
-            bool hasUnderline = (charInfo.style & FontStyles.Underline) == FontStyles.Underline;
-
-            return hasBold || hasItalic || hasUnderline;
         }
 
         /// <summary>
@@ -310,19 +272,7 @@ namespace MaskGame.UI
 
         private void OnDisable()
         {
-            if (typewriterCoroutine != null)
-            {
-                StopCoroutine(typewriterCoroutine);
-                typewriterCoroutine = null;
-            }
-
-            if (floatingCoroutine != null)
-            {
-                StopCoroutine(floatingCoroutine);
-                floatingCoroutine = null;
-            }
-
-            isTyping = false;
+            StopAllEffectCoroutines();
         }
     }
 }
