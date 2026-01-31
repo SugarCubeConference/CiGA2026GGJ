@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using MaskGame.UI;
 
 public class StartButton : MonoBehaviour
 {
@@ -13,7 +14,16 @@ public class StartButton : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(targetSceneName))
         {
-            SceneManager.LoadScene(targetSceneName);
+            // 使用转场效果
+            if (SceneTransition.Instance != null)
+            {
+                SceneTransition.Instance.LoadSceneWithTransition(targetSceneName);
+            }
+            else
+            {
+                // 回退到直接加载
+                SceneManager.LoadScene(targetSceneName);
+            }
         }
     }
 }

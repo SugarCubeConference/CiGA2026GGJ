@@ -82,7 +82,14 @@ namespace MaskGame.UI
             PlayerPrefs.DeleteKey("TotalAnswers");
             PlayerPrefs.DeleteKey("GameWon");
 
-            SceneManager.LoadScene("Main");
+            if (MaskGame.UI.SceneTransition.Instance != null)
+            {
+                MaskGame.UI.SceneTransition.Instance.LoadSceneWithTransition("Main");
+            }
+            else
+            {
+                SceneManager.LoadScene("Main");
+            }
         }
 
         private void OnQuit()

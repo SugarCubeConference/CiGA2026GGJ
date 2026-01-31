@@ -38,7 +38,14 @@ namespace MaskGame.UI
         /// </summary>
         public void QuitToMenu()
         {
-            SceneManager.LoadScene(menuSceneName);
+            if (MaskGame.UI.SceneTransition.Instance != null)
+            {
+                MaskGame.UI.SceneTransition.Instance.LoadSceneWithTransition(menuSceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(menuSceneName);
+            }
         }
     }
 }
