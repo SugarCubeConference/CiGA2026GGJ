@@ -46,6 +46,8 @@ namespace MaskGame.Managers
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
+        private int poolDay = -1;
+        private List<EncounterData> dayPool = new List<EncounterData>();
 
         // 游戏状态
         private int currentDay = 1;
@@ -122,6 +124,7 @@ namespace MaskGame.Managers
             currentEncounterIndex = 0;
             socialBattery = gameConfig.initialHealth; // 初始4条血，最大可达7条
             state = GameState.Resolve;
+            isPaused = false;
             totalAnswers = 0;
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
@@ -135,34 +138,33 @@ namespace MaskGame.Managers
 
         private List<EncounterData> GetPool()
         {
-            List<EncounterData> allEncounters = new List<EncounterData>();
-            
+            if (poolDay == currentDay)
+                return dayPool;
+
+            poolDay = currentDay;
+            dayPool.Clear();
+
+            IReadOnlyList<EncounterData> src = encounterPool;
             if (encounterSet != null)
             {
-                allEncounters = encounterSet.items;
+                src = encounterSet.Items;
             }
             else if (!resLoaded && encounterPool.Count == 0)
             {
                 resLoaded = true;
                 encounterPool.AddRange(Resources.LoadAll<EncounterData>(EncounterRes));
-                allEncounters = encounterPool;
-            }
-            else
-            {
-                allEncounters = encounterPool;
             }
 
-            // 过滤当前day的对话
-            List<EncounterData> filteredEncounters = new List<EncounterData>();
-            foreach (var encounter in allEncounters)
+            for (int i = 0; i < src.Count; i++)
             {
+                EncounterData encounter = src[i];
                 if (encounter.dayNumber == currentDay)
                 {
-                    filteredEncounters.Add(encounter);
+                    dayPool.Add(encounter);
                 }
             }
 
-            return filteredEncounters;
+            return dayPool;
         }
 
         /// <summary>
@@ -202,27 +204,23 @@ namespace MaskGame.Managers
         /// </summary>
         private void LoadNextEncounter()
         {
-            List<EncounterData> pool = GetPool();
-            if (pool.Count == 0)
-            {
-                UnityEngine.Debug.LogWarning(
-                    $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
-                );
-                return;
-            }
-
-            // 循环使用对话池
             if (shuffledEncounters.Count == 0)
             {
                 ShuffleEncounters();
+
+                if (shuffledEncounters.Count == 0)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
+                    );
+                    return;
+                }
             }
 
-            // 从池中随机取一个
-            int randomIndex = Random.Range(0, shuffledEncounters.Count);
-            currentEncounter = shuffledEncounters[randomIndex];
-            shuffledEncounters.RemoveAt(randomIndex);
+            int lastIndex = shuffledEncounters.Count - 1;
+            currentEncounter = shuffledEncounters[lastIndex];
+            shuffledEncounters.RemoveAt(lastIndex);
 
-            // 生成NPC
             SpawnNPC(currentEncounter);
 
             // 获取决策时间（应用电池技能加成）
@@ -251,7 +249,7 @@ namespace MaskGame.Managers
 
         private void ResolveAnswer(MaskType selectedMask, bool isTimeout)
         {
-            if (state != GameState.Await)
+            if (state != GameState.Await || isPaused)
                 return;
 
             state = GameState.Resolve;
@@ -367,7 +365,7 @@ namespace MaskGame.Managers
         private void CompleteDay()
         {
             state = GameState.DayEnd;
-            
+
             // 输出当日统计
             int totalQuestionsToday = GetCurrentDayEncounters();
             Debug.Log($"===== 第{currentDay}天结束 =====");
@@ -375,10 +373,10 @@ namespace MaskGame.Managers
             Debug.Log($"正确率: {(dailyCorrectAnswers * 100f / totalQuestionsToday):F1}%");
             Debug.Log($"剩余生命值: {socialBattery}/{gameConfig.maxHealth}");
             Debug.Log("===================");
-            
+
             // 重置当日计数器
             dailyCorrectAnswers = 0;
-            
+
             OnDayComplete.Invoke();
 
             // 检查是否通关所有天数
@@ -400,7 +398,7 @@ namespace MaskGame.Managers
         {
             Debug.Log("[技能系统] 显示技能选择面板");
             OnShowSkillSelection.Invoke();
-            
+
             // 查找AwardPanelUI（包括禁用的对象）
             var awardPanel = FindObjectOfType<MaskGame.UI.AwardPanelUI>(true);
             if (awardPanel != null)
@@ -431,7 +429,7 @@ namespace MaskGame.Managers
         {
             int oldHealth = socialBattery;
             socialBattery = Mathf.Min(socialBattery + amount, gameConfig.maxHealth);
-            
+
             if (socialBattery != oldHealth)
             {
                 OnBatteryChanged.Invoke(socialBattery);
@@ -463,7 +461,7 @@ namespace MaskGame.Managers
             Debug.Log($"总正确率: {(correctAnswers * 100f / totalAnswers):F1}%");
             Debug.Log($"最终生命值: {socialBattery}/{gameConfig.maxHealth}");
             Debug.Log("===================");
-            
+
             EndGame(true);
         }
 
@@ -514,8 +512,13 @@ namespace MaskGame.Managers
             // 生成新NPC
             if (encounter.npcPrefab != null && npcSpawnPoint != null)
             {
-                currentNPC = Instantiate(encounter.npcPrefab, npcSpawnPoint.position, Quaternion.identity, npcSpawnPoint);
-                
+                currentNPC = Instantiate(
+                    encounter.npcPrefab,
+                    npcSpawnPoint.position,
+                    Quaternion.identity,
+                    npcSpawnPoint
+                );
+
                 // 添加入场动画组件（如果预制体上没有）
                 if (currentNPC.GetComponent<MaskGame.UI.NPCEntranceAnimation>() == null)
                 {
