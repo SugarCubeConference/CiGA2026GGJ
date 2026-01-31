@@ -387,6 +387,7 @@ namespace MaskGame.UI
             tmpText.color = color;
             tmpText.alignment = TextAlignmentOptions.Center;
             tmpText.fontStyle = FontStyles.Bold;
+            tmpText.raycastTarget = false; // 不阻挡鼠标点击
 
             // 设置层级（最前）
             floatingObj.transform.SetAsLastSibling();

@@ -124,11 +124,8 @@ namespace MaskGame.UI
             {
                 panelRoot.SetActive(true);
                 
-                // 确保所有直接子对象都被激活
-                foreach (Transform child in panelRoot.transform)
-                {
-                    child.gameObject.SetActive(true);
-                }
+                // 递归激活所有子对象（包括嵌套的子对象）
+                ActivateAllChildren(panelRoot.transform);
             }
 
             isWaitingForSelection = true;
@@ -267,6 +264,23 @@ namespace MaskGame.UI
             if (settingButton != null)
             {
                 settingButton.EnableButton();
+            }
+        }
+
+        /// <summary>
+        /// 递归激活所有子对象
+        /// </summary>
+        private void ActivateAllChildren(Transform parent)
+        {
+            foreach (Transform child in parent)
+            {
+                child.gameObject.SetActive(true);
+                
+                // 递归激活子对象的子对象
+                if (child.childCount > 0)
+                {
+                    ActivateAllChildren(child);
+                }
             }
         }
     }
