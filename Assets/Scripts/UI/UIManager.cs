@@ -70,7 +70,7 @@ namespace MaskGame.UI
         private bool lastIsWarning;
         private string normalSlashColorHex;
         private string warningSlashColorHex;
-        private string cachedSlashString = "";
+        private string cachedSlashString;
 
         private void Awake()
         {
@@ -200,7 +200,7 @@ namespace MaskGame.UI
                 if (!hasLoggedMissingTimeSlashText)
                 {
                     UnityEngine.Debug.LogWarning(
-                        "UIManager: timeSlashText未null，请在Inspector中连接Text_deadline (TMP)组件！"
+                        "UIManager: timeSlashText为null，请在Inspector中连接Text_deadline (TMP)组件！"
                     );
                     hasLoggedMissingTimeSlashText = true;
                 }
