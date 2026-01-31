@@ -143,10 +143,10 @@ namespace MaskGame.Managers
             poolDay = currentDay;
             dayPool.Clear();
 
-            List<EncounterData> src = encounterPool;
+            IReadOnlyList<EncounterData> src = encounterPool;
             if (encounterSet != null)
             {
-                src = encounterSet.items;
+                src = encounterSet.Items;
             }
             else if (!resLoaded && encounterPool.Count == 0)
             {
@@ -203,8 +203,13 @@ namespace MaskGame.Managers
         /// </summary>
         private void LoadNextEncounter()
         {
-            List<EncounterData> pool = GetPool();
-            if (pool.Count == 0)
+            // 循环使用对话池
+            if (shuffledEncounters.Count == 0)
+            {
+                ShuffleEncounters();
+            }
+
+            if (shuffledEncounters.Count == 0)
             {
                 UnityEngine.Debug.LogWarning(
                     $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
@@ -212,16 +217,9 @@ namespace MaskGame.Managers
                 return;
             }
 
-            // 循环使用对话池
-            if (shuffledEncounters.Count == 0)
-            {
-                ShuffleEncounters();
-            }
-
-            // 从池中随机取一个
-            int randomIndex = Random.Range(0, shuffledEncounters.Count);
-            currentEncounter = shuffledEncounters[randomIndex];
-            shuffledEncounters.RemoveAt(randomIndex);
+            int lastIndex = shuffledEncounters.Count - 1;
+            currentEncounter = shuffledEncounters[lastIndex];
+            shuffledEncounters.RemoveAt(lastIndex);
 
             // 生成NPC
             SpawnNPC(currentEncounter);
