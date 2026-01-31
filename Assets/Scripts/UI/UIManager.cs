@@ -262,7 +262,6 @@ namespace MaskGame.UI
                 {
                     keywordText.text = $"关键词: {encounter.keywords}";
                     keywordText.gameObject.SetActive(true);
-                    UnityEngine.Debug.Log($"[思维敏捷] 显示关键词: {encounter.keywords}");
                 }
             }
             else
@@ -286,7 +285,6 @@ namespace MaskGame.UI
                         if (maskImages[i] != null)
                         {
                             maskImages[i].color = new Color(1f, 0.5f, 0.5f); // 淡红色
-                            UnityEngine.Debug.Log($"[内心推演] 标红错误选项: {maskType}");
                         }
                         break; // 只标记一个
                     }

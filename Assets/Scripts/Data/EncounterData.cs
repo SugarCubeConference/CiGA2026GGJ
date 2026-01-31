@@ -31,10 +31,6 @@ namespace MaskGame.Data
         [Tooltip("对应的NPC预制体")]
         public GameObject npcPrefab;
 
-        [Tooltip("适用的天数（1=Day1, 2=Day2, 3=Day3）")]
-        [Range(1, 3)]
-        public int dayNumber = 1;
-
         [Header("正确答案")]
         [Tooltip("此对话需要的正确面具")]
         public MaskType correctMask;

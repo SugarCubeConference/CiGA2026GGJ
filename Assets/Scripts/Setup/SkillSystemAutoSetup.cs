@@ -25,7 +25,6 @@ namespace MaskGame.Setup
             var skillManager = FindObjectOfType<SkillManager>();
             if (skillManager == null)
             {
-                Debug.LogError("[SkillSystemAutoSetup] SkillManager未找到！");
                 return;
             }
 
@@ -51,7 +50,6 @@ namespace MaskGame.Setup
             if (field != null)
             {
                 field.SetValue(skillManager, skillList);
-                Debug.Log($"[SkillSystemAutoSetup] SkillManager技能数组已配置，共{skillList.Count}个技能");
             }
             #endif
         }
@@ -61,14 +59,12 @@ namespace MaskGame.Setup
             var awardPanel = GameObject.Find("Panel_award");
             if (awardPanel == null)
             {
-                Debug.LogError("[SkillSystemAutoSetup] Panel_award未找到！");
                 return;
             }
 
             var awardPanelUI = awardPanel.GetComponent<MaskGame.UI.AwardPanelUI>();
             if (awardPanelUI == null)
             {
-                Debug.LogError("[SkillSystemAutoSetup] AwardPanelUI组件未找到！");
                 return;
             }
 
@@ -76,7 +72,6 @@ namespace MaskGame.Setup
             var imageBackground = awardPanel.transform.Find("Image_background");
             if (imageBackground == null)
             {
-                Debug.LogError("[SkillSystemAutoSetup] Image_background未找到！");
                 return;
             }
 
@@ -110,7 +105,7 @@ namespace MaskGame.Setup
 
             if (skillButtons.Count < 3)
             {
-                Debug.LogWarning($"[SkillSystemAutoSetup] 只找到{skillButtons.Count}个技能按钮，需要至少3个");
+                // 按钮数不足
             }
 
             // 获取已获得技能显示文本
@@ -154,8 +149,6 @@ namespace MaskGame.Setup
             {
                 acquiredTextField.SetValue(awardPanelUI, acquiredSkillsText);
             }
-
-            Debug.Log($"[SkillSystemAutoSetup] AwardPanelUI组件已配置 - 按钮:{skillButtons.Count}, 名称文本:{nameTexts.Count}, 描述文本:{descTexts.Count}");
         }
     }
 }

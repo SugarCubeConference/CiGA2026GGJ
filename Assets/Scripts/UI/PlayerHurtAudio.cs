@@ -48,13 +48,11 @@ namespace MaskGame.UI
 
         private void Awake()
         {
-            Debug.Log("[PlayerHurtAudio] Awake被调用");
             InitializeAudioSource();
         }
 
         private void OnEnable()
         {
-            Debug.Log("[PlayerHurtAudio] OnEnable被调用");
             // 不在OnEnable中注册，因为GameManager可能还未初始化
         }
 
@@ -65,7 +63,6 @@ namespace MaskGame.UI
 
         private void Start()
         {
-            Debug.Log("[PlayerHurtAudio] Start被调用");
             // 在Start中注册事件，确保GameManager已初始化
             RegisterEvents();
         }
@@ -84,11 +81,6 @@ namespace MaskGame.UI
                 GameManager.Instance.OnBatteryChanged.AddListener(OnHealthChanged);
                 // 立即初始化健康值
                 InitializePreviousHealth();
-                Debug.Log($"[PlayerHurtAudio] 已注册事件，初始健康值={previousHealth}");
-            }
-            else
-            {
-                Debug.LogWarning("[PlayerHurtAudio] GameManager.Instance为空，无法注册事件！");
             }
         }
 
@@ -110,16 +102,10 @@ namespace MaskGame.UI
 
         private void OnHealthChanged(int currentHealth)
         {
-            Debug.Log($"[PlayerHurtAudio] OnHealthChanged: previousHealth={previousHealth}, currentHealth={currentHealth}");
-            
             // 检测生命值是否降低（受伤）
             if (ShouldPlayHurtSound(currentHealth))
             {
                 PlayHurtSound(currentHealth);
-            }
-            else
-            {
-                Debug.Log($"[PlayerHurtAudio] 不播放音效 - previousHealth={previousHealth}, currentHealth={currentHealth}, hurtSounds配置数量={hurtSounds?.Length ?? 0}");
             }
 
             previousHealth = currentHealth;
@@ -148,11 +134,8 @@ namespace MaskGame.UI
 
         private void PlayHurtSound(int currentHealth)
         {
-            Debug.Log("[PlayerHurtAudio] 尝试播放受伤音效");
-            
             if (audioSource == null)
             {
-                Debug.LogError("[PlayerHurtAudio] AudioSource为空！");
                 return;
             }
 
@@ -160,7 +143,6 @@ namespace MaskGame.UI
             AudioClip selectedClip = GetRandomHurtSound();
             if (selectedClip == null)
             {
-                Debug.LogWarning("[PlayerHurtAudio] 没有找到有效的音频片段！请在Inspector中配置Hurt Sounds");
                 return;
             }
 
@@ -178,7 +160,6 @@ namespace MaskGame.UI
             }
 
             // 播放音效
-            Debug.Log($"[PlayerHurtAudio] 播放音效: {selectedClip.name}, 音量={adjustedVolume}");
             audioSource.PlayOneShot(selectedClip, adjustedVolume);
             lastPlayTime = Time.time;
         }

@@ -46,7 +46,6 @@ namespace MaskGame.Managers
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
-        private int poolDay = -1;
         private List<EncounterData> dayPool = new List<EncounterData>();
 
         // 游戏状态
@@ -138,11 +137,9 @@ namespace MaskGame.Managers
 
         private List<EncounterData> GetPool()
         {
-            if (poolDay == currentDay)
+            // 只加载一次
+            if (dayPool.Count > 0)
                 return dayPool;
-
-            poolDay = currentDay;
-            dayPool.Clear();
 
             IReadOnlyList<EncounterData> src = encounterPool;
             if (encounterSet != null)
@@ -153,14 +150,16 @@ namespace MaskGame.Managers
             {
                 resLoaded = true;
                 encounterPool.AddRange(Resources.LoadAll<EncounterData>(EncounterRes));
+                src = encounterPool;
             }
 
+            // 添加所有encounters（不再按天数过滤）
+            dayPool.Clear();
             for (int i = 0; i < src.Count; i++)
             {
-                EncounterData encounter = src[i];
-                if (encounter.dayNumber == currentDay)
+                if (src[i] != null)
                 {
-                    dayPool.Add(encounter);
+                    dayPool.Add(src[i]);
                 }
             }
 
@@ -168,34 +167,38 @@ namespace MaskGame.Managers
         }
 
         /// <summary>
-        /// 获取当前天的对话数量
+        /// 获取当前天的对话数量（固定值）
         /// </summary>
         private int GetCurrentDayEncounters()
         {
-            int dayIndex = currentDay - 1;
-            if (dayIndex >= 0 && dayIndex < gameConfig.encountersPerDay.Length)
-            {
-                return gameConfig.encountersPerDay[dayIndex];
-            }
-            return 3; // 默认3个对话
+            return gameConfig.encountersPerDay;
         }
 
         /// <summary>
-        /// 打乱对话顺序
+        /// 每天开始时随机抽取对话
         /// </summary>
         private void ShuffleEncounters()
         {
             List<EncounterData> pool = GetPool();
             shuffledEncounters.Clear();
-            shuffledEncounters.AddRange(pool);
+
+            // 创建临时列表用于抽取
+            List<EncounterData> tempPool = new List<EncounterData>(pool);
 
             // Fisher-Yates 洗牌
-            for (int i = shuffledEncounters.Count - 1; i > 0; i--)
+            for (int i = tempPool.Count - 1; i > 0; i--)
             {
                 int j = Random.Range(0, i + 1);
-                var temp = shuffledEncounters[i];
-                shuffledEncounters[i] = shuffledEncounters[j];
-                shuffledEncounters[j] = temp;
+                var temp = tempPool[i];
+                tempPool[i] = tempPool[j];
+                tempPool[j] = temp;
+            }
+
+            // 抽取指定数量（每天5条）
+            int count = Mathf.Min(gameConfig.encountersPerDay, tempPool.Count);
+            for (int i = 0; i < count; i++)
+            {
+                shuffledEncounters.Add(tempPool[i]);
             }
         }
 
@@ -315,14 +318,12 @@ namespace MaskGame.Managers
             else if (outcome == AnswerOutcome.Neutral)
             {
                 // 无效选项 - 不加分也不扣血
-                Debug.Log($"[GameManager] 选择了无效选项，无效果");
             }
             else
             {
                 // 妙语连珠技能 - 选错时获得重试机会
                 if (SkillManager.Instance != null && SkillManager.Instance.TryUseEloquence())
                 {
-                    Debug.Log("[妙语连珠] 选错了，但获得重试机会！");
                     OnAnswerResult.Invoke(AnswerOutcome.Wrong, feedbackText + "\n妙语连珠生效！再试一次");
                     state = GameState.Await; // 重新进入等待状态
                     return; // 不扣血，不进入下一对话
@@ -375,14 +376,6 @@ namespace MaskGame.Managers
         {
             state = GameState.DayEnd;
 
-            // 输出当日统计
-            int totalQuestionsToday = GetCurrentDayEncounters();
-            Debug.Log($"===== 第{currentDay}天结束 =====");
-            Debug.Log($"当日回答正确: {dailyCorrectAnswers}/{totalQuestionsToday}");
-            Debug.Log($"正确率: {(dailyCorrectAnswers * 100f / totalQuestionsToday):F1}%");
-            Debug.Log($"剩余生命值: {socialBattery}/{gameConfig.maxHealth}");
-            Debug.Log("===================");
-
             // 重置当日计数器
             dailyCorrectAnswers = 0;
 
@@ -405,19 +398,16 @@ namespace MaskGame.Managers
         /// </summary>
         private void ShowSkillSelection()
         {
-            Debug.Log("[技能系统] 显示技能选择面板");
             OnShowSkillSelection.Invoke();
 
             // 查找AwardPanelUI（包括禁用的对象）
             var awardPanel = FindObjectOfType<MaskGame.UI.AwardPanelUI>(true);
             if (awardPanel != null)
             {
-                Debug.Log("[技能系统] 找到AwardPanelUI，调用ShowSkillSelection");
                 awardPanel.ShowSkillSelection();
             }
             else
             {
-                Debug.LogWarning("[GameManager] AwardPanelUI未找到，跳过技能选择");
                 StartCoroutine(AdvanceToNextDay());
             }
         }
@@ -427,7 +417,6 @@ namespace MaskGame.Managers
         /// </summary>
         public void OnSkillSelectionComplete()
         {
-            Debug.Log("[技能系统] 技能选择完成，进入下一天");
             StartCoroutine(AdvanceToNextDay());
         }
 
@@ -442,7 +431,6 @@ namespace MaskGame.Managers
             if (socialBattery != oldHealth)
             {
                 OnBatteryChanged.Invoke(socialBattery);
-                Debug.Log($"[GameManager] 生命值恢复: {oldHealth} -> {socialBattery}");
             }
         }
 
@@ -465,12 +453,6 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameWin()
         {
-            Debug.Log($"===== 游戏胜利 =====");
-            Debug.Log($"总回答正确: {correctAnswers}/{totalAnswers}");
-            Debug.Log($"总正确率: {(correctAnswers * 100f / totalAnswers):F1}%");
-            Debug.Log($"最终生命值: {socialBattery}/{gameConfig.maxHealth}");
-            Debug.Log("===================");
-
             EndGame(true);
         }
 

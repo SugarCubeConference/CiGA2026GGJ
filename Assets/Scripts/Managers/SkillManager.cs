@@ -113,11 +113,6 @@ namespace MaskGame.Managers
             // 立即应用某些技能效果
             ApplyImmediateSkillEffect(skill);
 
-            if (debugMode)
-            {
-                Debug.Log($"[SkillManager] 获得技能: {skill.skillName}, 当前层数: {acquiredSkills[skill.skillType]}");
-            }
-
             OnSkillAcquired.Invoke(skill);
             OnSkillsUpdated.Invoke(GetAcquiredSkillList());
         }
@@ -134,7 +129,6 @@ namespace MaskGame.Managers
                     if (GameManager.Instance != null)
                     {
                         GameManager.Instance.RestoreHealth((int)skill.effectValue);
-                        Debug.Log($"[SkillManager] 凝神定气生效，回复{skill.effectValue}点生命值");
                     }
                     break;
             }
@@ -186,7 +180,6 @@ namespace MaskGame.Managers
             if (eloquenceUsedThisEncounter) return false;
 
             eloquenceUsedThisEncounter = true;
-            Debug.Log("[SkillManager] 妙语连珠生效，获得额外选择机会");
             return true;
         }
 
@@ -199,7 +192,6 @@ namespace MaskGame.Managers
             if (innerDeductionUsedThisEncounter) return false;
 
             innerDeductionUsedThisEncounter = true;
-            Debug.Log("[SkillManager] 内心推演生效，标红一个错误选项");
             return true;
         }
 

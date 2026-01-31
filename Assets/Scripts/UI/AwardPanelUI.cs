@@ -80,20 +80,14 @@ namespace MaskGame.UI
         /// </summary>
         public void ShowSkillSelection()
         {
-            Debug.Log("[AwardPanelUI] ShowSkillSelection被调用");
-            
             if (SkillManager.Instance == null)
             {
-                Debug.LogError("[AwardPanelUI] SkillManager未找到!");
                 return;
             }
-
-            Debug.Log($"[AwardPanelUI] SkillManager找到，panelRoot={panelRoot != null}, skillButtons数量={skillButtons?.Length ?? 0}");
 
             // 检查必要组件
             if (skillButtons == null || skillButtons.Length == 0)
             {
-                Debug.LogError("[AwardPanelUI] skillButtons未配置！");
                 return;
             }
 
@@ -102,14 +96,12 @@ namespace MaskGame.UI
 
             // 获取随机技能
             currentSkillOptions = SkillManager.Instance.GetRandomSkills(3);
-            Debug.Log($"[AwardPanelUI] 获取到{currentSkillOptions.Count}个随机技能");
 
             // 更新UI显示
             for (int i = 0; i < skillButtons.Length; i++)
             {
                 if (skillButtons[i] == null)
                 {
-                    Debug.LogWarning($"[AwardPanelUI] skillButtons[{i}]为null，跳过");
                     continue;
                 }
 
@@ -131,7 +123,6 @@ namespace MaskGame.UI
             }
 
             isWaitingForSelection = true;
-            Debug.Log("[AwardPanelUI] 技能选择面板已显示");
         }
 
         /// <summary>
@@ -142,21 +133,11 @@ namespace MaskGame.UI
             if (skillNameTexts != null && index < skillNameTexts.Length && skillNameTexts[index] != null)
             {
                 skillNameTexts[index].text = skill.skillName;
-                Debug.Log($"[AwardPanelUI] 设置技能名称[{index}]: {skill.skillName}");
-            }
-            else
-            {
-                Debug.LogWarning($"[AwardPanelUI] skillNameTexts[{index}]不可用");
             }
 
             if (skillDescTexts != null && index < skillDescTexts.Length && skillDescTexts[index] != null)
             {
                 skillDescTexts[index].text = skill.description;
-                Debug.Log($"[AwardPanelUI] 设置技能描述[{index}]: {skill.description}");
-            }
-            else
-            {
-                Debug.LogWarning($"[AwardPanelUI] skillDescTexts[{index}]不可用");
             }
 
             if (skillIcons != null && index < skillIcons.Length && skillIcons[index] != null && skill.icon != null)
@@ -185,8 +166,6 @@ namespace MaskGame.UI
             {
                 SkillManager.Instance.AcquireSkill(selectedSkill);
             }
-
-            Debug.Log($"[AwardPanelUI] 玩家选择了技能: {selectedSkill.skillName}");
 
             // 隐藏面板
             HidePanel();
