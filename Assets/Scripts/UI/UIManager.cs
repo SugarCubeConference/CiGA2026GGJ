@@ -72,6 +72,7 @@ namespace MaskGame.UI
         private string warningSlashColorHex;
         private string cachedSlashString;
         private Color[] originalMaskColors; // 保存mask的原始颜色
+        private Coroutine keywordHideCoroutine; // 关键词隐藏协程
 
         private void Awake()
         {
@@ -297,8 +298,17 @@ namespace MaskGame.UI
             {
                 if (keywordText != null && !string.IsNullOrEmpty(encounter.keywords))
                 {
+                    // 停止之前的隐藏协程
+                    if (keywordHideCoroutine != null)
+                    {
+                        StopCoroutine(keywordHideCoroutine);
+                    }
+
                     keywordText.text = $"关键词: {encounter.keywords}";
                     keywordText.gameObject.SetActive(true);
+
+                    // 2秒后隐藏关键词
+                    keywordHideCoroutine = StartCoroutine(HideKeywordAfterDelay(2f));
                 }
             }
             else
@@ -343,6 +353,21 @@ namespace MaskGame.UI
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 延迟隐藏关键词
+        /// </summary>
+        private System.Collections.IEnumerator HideKeywordAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+
+            if (keywordText != null)
+            {
+                keywordText.gameObject.SetActive(false);
+            }
+
+            keywordHideCoroutine = null;
         }
 
         /// <summary>

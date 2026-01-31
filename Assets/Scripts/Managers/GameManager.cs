@@ -351,12 +351,8 @@ namespace MaskGame.Managers
 
             if (outcome == AnswerOutcome.Correct)
             {
-                // 回答正确 - 增加一点生命值（不超过最大值7）
-                if (socialBattery < gameConfig.maxHealth)
-                {
-                    socialBattery++;
-                    OnBatteryChanged.Invoke(socialBattery);
-                }
+                // 回答正确 - 不再加血
+                // 已移除加血逻辑
             }
             else if (outcome == AnswerOutcome.Neutral)
             {
