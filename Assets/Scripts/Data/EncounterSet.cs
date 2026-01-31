@@ -6,6 +6,9 @@ namespace MaskGame.Data
     [CreateAssetMenu(fileName = "EncounterSet", menuName = "Mask Game/Encounter Set")]
     public class EncounterSet : ScriptableObject
     {
-        public List<EncounterData> items = new List<EncounterData>();
+        [SerializeField]
+        private List<EncounterData> items = new List<EncounterData>();
+
+        public IReadOnlyList<EncounterData> Items => items;
     }
 }
