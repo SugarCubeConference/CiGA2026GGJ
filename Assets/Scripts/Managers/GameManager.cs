@@ -94,8 +94,7 @@ namespace MaskGame.Managers
                 // 时间耗尽 = 选错
                 if (remainingTime <= 0)
                 {
-                    state = GameState.Resolve;
-                    ProcessAnswer(MaskType.Mask1, true); // 超时视为选错
+                    ResolveAnswer(MaskType.Mask1, true);
                 }
             }
         }
@@ -158,7 +157,7 @@ namespace MaskGame.Managers
             if (encounterPool.Count == 0)
             {
                 UnityEngine.Debug.LogWarning(
-                    "GameManager: 对话池为空，请在Inspector中添加EncounterData！"
+                    "GameManager: encounter pool is empty. Assign EncounterData in the Inspector."
                 );
                 return;
             }
@@ -186,10 +185,16 @@ namespace MaskGame.Managers
         /// </summary>
         public void SelectMask(MaskType selectedMask)
         {
+            ResolveAnswer(selectedMask, false);
+        }
+
+        private void ResolveAnswer(MaskType selectedMask, bool isTimeout)
+        {
             if (state != GameState.Await)
                 return;
+
             state = GameState.Resolve;
-            ProcessAnswer(selectedMask, false);
+            ProcessAnswer(selectedMask, isTimeout);
         }
 
         /// <summary>
@@ -298,21 +303,15 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameWin()
         {
-            state = GameState.GameEnd;
-
-            // 保存统计数据
-            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
-            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
-            PlayerPrefs.SetInt("GameWon", 1);
-            PlayerPrefs.Save();
-
-            StartCoroutine(LoadVictoryScene());
+            EndGame(true);
         }
 
-        private IEnumerator LoadVictoryScene()
+        private void SaveStats(bool won)
         {
-            yield return new WaitForSeconds(1.5f);
-            SceneManager.LoadScene("GameWin");
+            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
+            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
+            PlayerPrefs.SetInt("GameWon", won ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         /// <summary>
@@ -320,22 +319,24 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameOver()
         {
-            state = GameState.GameEnd;
-            OnGameOver.Invoke();
-
-            // 保存统计数据
-            PlayerPrefs.SetInt("TotalAnswers", totalAnswers);
-            PlayerPrefs.SetInt("CorrectAnswers", correctAnswers);
-            PlayerPrefs.Save();
-
-            // 延迟跳转到失败场景
-            StartCoroutine(LoadGameOverScene());
+            EndGame(false);
         }
 
-        private IEnumerator LoadGameOverScene()
+        private void EndGame(bool won)
+        {
+            state = GameState.GameEnd;
+
+            if (!won)
+                OnGameOver.Invoke();
+
+            SaveStats(won);
+            StartCoroutine(LoadScene(won ? "GameWin" : "GameOver"));
+        }
+
+        private IEnumerator LoadScene(string sceneName)
         {
             yield return new WaitForSeconds(1.5f);
-            SceneManager.LoadScene("GameOver");
+            SceneManager.LoadScene(sceneName);
         }
 
         /// <summary>
