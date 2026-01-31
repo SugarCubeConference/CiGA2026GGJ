@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d96f1e98aeee92244a846d1006fbfbf0, type: 3}
+  m_Name: 004
+  m_EditorClassIdentifier: 
+  dialogueText: "\u6211\u6628\u5929\u6478\u51FA\u975E\u6D32\u4E4B\u661F\u4E86\r\n\r"
+  optionTexts:
+  - "\u9001\u6211"
+  - "\u54E6\u6CA1\u5F97\u5934"
+  - "\u62FF\u6211\u7684\u725B\u89D2\u6362\u4F60\u7684\u597D\u4E0D\u597D\u5440\u5B9D\u5B9D\u3002"
+  - "\u5510\u4EBA\u7206\u7387\u3002 "
+  optionFeedbacks:
+  - "\u4E0D\u9001\u3002"
+  - "\uFF08\u9F13\u638C\uFF09"
+  - "\u62FF\u4F60\u7684\u51AF\u6362\u6211\u7684\u597D\u4E0D\u597D\u5440\u3002"
+  - "\u4F60\u770B\u53C8\u6025\u3002"
+  friendGroup: "\u5F88\u5E78\u8FD0\u7684\u670B\u53CB"
+  npcPrefab: {fileID: 8211323745619321951, guid: 213def9609af9cb4d86e45ce6c85a638, type: 3}
+  correctMask: 1
+  neutralMasks: 
+  keywords: 
