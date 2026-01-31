@@ -51,14 +51,25 @@ namespace MaskGame.UI
         [SerializeField]
         private float floatSpeed = 2f;
 
+        [Header("对话淡出设置")]
+        [Tooltip("打字机完成后等待多久开始淡出（秒）")]
+        [SerializeField]
+        private float fadeOutDelay = 1.5f;
+
+        [Tooltip("淡出动画持续时间（秒）")]
+        [SerializeField]
+        private float fadeOutDuration = 0.5f;
+
         private TextMeshProUGUI textComponent;
         private AudioSource audioSource;
         private Coroutine typewriterCoroutine;
         private Coroutine floatingCoroutine;
+        private Coroutine fadeOutCoroutine;
         private string fullText;
         private bool isTyping = false;
         private readonly List<int> floatingCharacterIndices = new List<int>();
         private TMP_MeshInfo[] cachedMeshInfo;
+        private CanvasGroup canvasGroup;
 
         private void Awake()
         {
@@ -69,6 +80,13 @@ namespace MaskGame.UI
             audioSource.playOnAwake = false;
             audioSource.loop = false;
             audioSource.volume = soundVolume;
+
+            // 获取或添加CanvasGroup用于淡出效果
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
         }
 
         private void OnEnable()
@@ -85,6 +103,12 @@ namespace MaskGame.UI
         public void PlayTypewriter(string text)
         {
             StopAllEffectCoroutines();
+
+            // 重置透明度
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+            }
 
             fullText = text ?? string.Empty;
             textComponent.text = fullText;
@@ -112,6 +136,12 @@ namespace MaskGame.UI
             {
                 StopCoroutine(floatingCoroutine);
                 floatingCoroutine = null;
+            }
+
+            if (fadeOutCoroutine != null)
+            {
+                StopCoroutine(fadeOutCoroutine);
+                fadeOutCoroutine = null;
             }
 
             isTyping = false;
@@ -204,6 +234,9 @@ namespace MaskGame.UI
 
             isTyping = false;
             typewriterCoroutine = null;
+
+            // 打字机完成后，检查是否需要淡出
+            CheckAndStartFadeOut();
         }
 
         /// <summary>
@@ -269,6 +302,57 @@ namespace MaskGame.UI
         /// 检查是否正在播放动画
         /// </summary>
         public bool IsTyping => isTyping;
+
+        /// <summary>
+        /// 检查是否需要启动淡出效果（没有思维敏捷技能时）
+        /// </summary>
+        private void CheckAndStartFadeOut()
+        {
+            // 检查是否有思维敏捷技能
+            bool hasQuickThinking = false;
+            var skillManager = MaskGame.Managers.SkillManager.Instance;
+            if (skillManager != null)
+            {
+                hasQuickThinking = skillManager.ShouldShowKeywords();
+            }
+
+            // 如果没有思维敏捷技能，启动淡出协程
+            if (!hasQuickThinking)
+            {
+                fadeOutCoroutine = StartCoroutine(FadeOutCoroutine());
+            }
+        }
+
+        /// <summary>
+        /// 淡出协程：等待指定时间后淡出文本
+        /// </summary>
+        private IEnumerator FadeOutCoroutine()
+        {
+            // 等待淡出延迟
+            yield return new WaitForSeconds(fadeOutDelay);
+
+            // 停止漂浮效果
+            if (floatingCoroutine != null)
+            {
+                StopCoroutine(floatingCoroutine);
+                floatingCoroutine = null;
+            }
+
+            // 淡出动画
+            float elapsed = 0f;
+            float startAlpha = canvasGroup.alpha;
+
+            while (elapsed < fadeOutDuration)
+            {
+                elapsed += Time.deltaTime;
+                float alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeOutDuration);
+                canvasGroup.alpha = alpha;
+                yield return null;
+            }
+
+            canvasGroup.alpha = 0f;
+            fadeOutCoroutine = null;
+        }
 
         private void OnDisable()
         {

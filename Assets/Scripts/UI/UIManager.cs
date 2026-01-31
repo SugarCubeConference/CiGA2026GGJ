@@ -72,7 +72,6 @@ namespace MaskGame.UI
         private string warningSlashColorHex;
         private string cachedSlashString;
         private Color[] originalMaskColors; // 保存mask的原始颜色
-        private Coroutine keywordHideCoroutine; // 关键词隐藏协程
 
         private void Awake()
         {
@@ -247,6 +246,8 @@ namespace MaskGame.UI
         /// </summary>
         private void DisplayEncounter(EncounterData encounter)
         {
+            UnityEngine.Debug.Log($"=== DisplayEncounter 开始 === encounter={encounter?.name}, keywords='{encounter?.keywords}'");
+            
             if (encounter == null)
                 return;
 
@@ -293,32 +294,6 @@ namespace MaskGame.UI
                 }
             }
 
-            // 思维敏捷技能 - 显示关键词
-            if (SkillManager.Instance != null && SkillManager.Instance.ShouldShowKeywords())
-            {
-                if (keywordText != null && !string.IsNullOrEmpty(encounter.keywords))
-                {
-                    // 停止之前的隐藏协程
-                    if (keywordHideCoroutine != null)
-                    {
-                        StopCoroutine(keywordHideCoroutine);
-                    }
-
-                    keywordText.text = $"关键词: {encounter.keywords}";
-                    keywordText.gameObject.SetActive(true);
-
-                    // 2秒后隐藏关键词
-                    keywordHideCoroutine = StartCoroutine(HideKeywordAfterDelay(2f));
-                }
-            }
-            else
-            {
-                if (keywordText != null)
-                {
-                    keywordText.gameObject.SetActive(false);
-                }
-            }
-
             // 内心推演技能 - 标红一个错误选项
             if (SkillManager.Instance != null && SkillManager.Instance.TryUseInnerDeduction())
             {
@@ -353,21 +328,6 @@ namespace MaskGame.UI
                     return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// 延迟隐藏关键词
-        /// </summary>
-        private System.Collections.IEnumerator HideKeywordAfterDelay(float delay)
-        {
-            yield return new WaitForSeconds(delay);
-
-            if (keywordText != null)
-            {
-                keywordText.gameObject.SetActive(false);
-            }
-
-            keywordHideCoroutine = null;
         }
 
         /// <summary>
