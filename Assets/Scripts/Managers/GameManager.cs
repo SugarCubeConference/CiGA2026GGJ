@@ -154,7 +154,6 @@ namespace MaskGame.Managers
                 encounterPool.AddRange(Resources.LoadAll<EncounterData>(EncounterRes));
             }
 
-            // 过滤当前day的对话
             for (int i = 0; i < src.Count; i++)
             {
                 EncounterData encounter = src[i];
@@ -204,30 +203,26 @@ namespace MaskGame.Managers
         /// </summary>
         private void LoadNextEncounter()
         {
-            List<EncounterData> pool = GetPool();
-            if (pool.Count == 0)
-            {
-                UnityEngine.Debug.LogWarning(
-                    $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
-                );
-                return;
-            }
-
-            // 循环使用对话池
             if (shuffledEncounters.Count == 0)
             {
                 ShuffleEncounters();
+
+                if (shuffledEncounters.Count == 0)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
+                    );
+                    return;
+                }
             }
 
-            // 从池中随机取一个
-            int randomIndex = Random.Range(0, shuffledEncounters.Count);
-            currentEncounter = shuffledEncounters[randomIndex];
-            shuffledEncounters.RemoveAt(randomIndex);
+            int lastIndex = shuffledEncounters.Count - 1;
+            currentEncounter = shuffledEncounters[lastIndex];
+            shuffledEncounters.RemoveAt(lastIndex);
 
-            // 生成NPC
             SpawnNPC(currentEncounter);
 
-            remainingTime = gameConfig.GetDecisionTime(currentDay); // 根据天数获取时间
+            remainingTime = gameConfig.GetDecisionTime(currentDay);
 
             OnNewEncounter.Invoke(currentEncounter);
             OnTimeChanged.Invoke(remainingTime);
@@ -360,7 +355,7 @@ namespace MaskGame.Managers
         private void CompleteDay()
         {
             state = GameState.DayEnd;
-            
+
             // 输出当日统计
             int totalQuestionsToday = GetCurrentDayEncounters();
             Debug.Log($"===== 第{currentDay}天结束 =====");
@@ -368,10 +363,10 @@ namespace MaskGame.Managers
             Debug.Log($"正确率: {(dailyCorrectAnswers * 100f / totalQuestionsToday):F1}%");
             Debug.Log($"剩余生命值: {socialBattery}/{gameConfig.maxHealth}");
             Debug.Log("===================");
-            
+
             // 重置当日计数器
             dailyCorrectAnswers = 0;
-            
+
             OnDayComplete.Invoke();
 
             // 检查是否通关所有天数
@@ -409,7 +404,7 @@ namespace MaskGame.Managers
             Debug.Log($"总正确率: {(correctAnswers * 100f / totalAnswers):F1}%");
             Debug.Log($"最终生命值: {socialBattery}/{gameConfig.maxHealth}");
             Debug.Log("===================");
-            
+
             EndGame(true);
         }
 
