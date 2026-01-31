@@ -20,6 +20,8 @@ namespace MaskGame.Simulation.Kernel
         public int TotalAnswers;
         public int CorrectAnswers;
         public DeterministicRng EncounterRng;
+        public byte HasEloquence;
+        public byte EloquenceUsedThisEncounter;
         public GameKernelPhase Phase;
 
         public int[] DayDeck;

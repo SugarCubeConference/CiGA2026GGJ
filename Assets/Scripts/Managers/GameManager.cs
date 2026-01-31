@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using MaskGame.Data;
 using MaskGame.Simulation;
+using Kernel = MaskGame.Simulation.Kernel;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -49,6 +50,17 @@ namespace MaskGame.Managers
 
         [SerializeField]
         private int fixedSeed = 1;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [SerializeField]
+        private bool enableKernelShadow = true;
+
+        private bool kernelShadowInitialized;
+        private Kernel.GameKernelRules kernelShadowRules;
+        private Kernel.EncounterDefinition[] kernelShadowEncounters;
+        private Dictionary<EncounterData, int> kernelShadowEncounterIds;
+        private Kernel.GameState kernelShadowState;
+#endif
 
         [SerializeField]
         private List<EncounterData> encounterPool = new List<EncounterData>();
@@ -147,11 +159,19 @@ namespace MaskGame.Managers
             dailyCorrectAnswers = 0;
             usedEncounters.Clear(); // 清空已使用encounters
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            InitializeKernelShadow();
+#endif
+
             OnDayChanged.Invoke(currentDay);
             OnBatteryChanged.Invoke(socialBattery);
 
             ShuffleEncounters();
             LoadNextEncounter();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ValidateKernelShadow("init");
+#endif
         }
 
         private List<EncounterData> GetPool()
@@ -326,7 +346,16 @@ namespace MaskGame.Managers
                 return;
 
             state = GameState.Resolve;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ApplyKernelShadowAnswer(selectedMask, isTimeout);
+#endif
+
             ProcessAnswer(selectedMask, isTimeout);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ValidateKernelShadow("answer");
+#endif
         }
 
         /// <summary>
@@ -501,6 +530,11 @@ namespace MaskGame.Managers
             {
                 OnBatteryChanged.Invoke(socialBattery);
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ApplyKernelShadowHeal(amount);
+            ValidateKernelShadow("restore_health");
+#endif
         }
 
         private IEnumerator AdvanceToNextDay()
@@ -511,10 +545,18 @@ namespace MaskGame.Managers
             currentEncounterIndex = 0;
             // 血量不重置，保持当前值
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ApplyKernelShadowAdvanceDay();
+#endif
+
             OnDayChanged.Invoke(currentDay);
 
             ShuffleEncounters();
             LoadNextEncounter();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ValidateKernelShadow("advance_day");
+#endif
         }
 
         /// <summary>
@@ -617,5 +659,178 @@ namespace MaskGame.Managers
         {
             isPaused = false;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void InitializeKernelShadow()
+        {
+            kernelShadowInitialized = false;
+            if (!enableKernelShadow)
+                return;
+
+            List<EncounterData> pool = GetPool();
+            int encounterCount = pool.Count;
+            if (encounterCount <= 0)
+                return;
+
+            kernelShadowEncounterIds = new Dictionary<EncounterData, int>(encounterCount);
+            kernelShadowEncounters = new Kernel.EncounterDefinition[encounterCount];
+
+            for (int i = 0; i < encounterCount; i++)
+            {
+                EncounterData encounter = pool[i];
+                kernelShadowEncounterIds[encounter] = i;
+
+                byte neutralBits = 0;
+                MaskType[] neutralMasks = encounter.neutralMasks;
+                if (neutralMasks != null)
+                {
+                    for (int n = 0; n < neutralMasks.Length; n++)
+                    {
+                        int maskIndex = (int)neutralMasks[n];
+                        neutralBits = (byte)(neutralBits | (1 << maskIndex));
+                    }
+                }
+
+                kernelShadowEncounters[i] = new Kernel.EncounterDefinition(
+                    (int)encounter.correctMask,
+                    neutralBits
+                );
+            }
+
+            kernelShadowRules = new Kernel.GameKernelRules(
+                gameConfig.totalDays,
+                gameConfig.encountersPerDay,
+                gameConfig.initialHealth,
+                gameConfig.maxHealth,
+                gameConfig.batteryPenalty
+            );
+
+            kernelShadowState = Kernel.GameKernel.CreateNewGame(
+                gameSeed,
+                kernelShadowRules,
+                encounterCount
+            );
+            KernelShadowSyncSkillFlags();
+
+            kernelShadowInitialized = true;
+        }
+
+        private void KernelShadowSyncSkillFlags()
+        {
+            kernelShadowState.HasEloquence =
+                SkillManager.Instance != null && SkillManager.Instance.HasSkill(SkillType.Eloquence)
+                    ? (byte)1
+                    : (byte)0;
+        }
+
+        private void ApplyKernelShadowAnswer(MaskType selectedMask, bool isTimeout)
+        {
+            if (!enableKernelShadow || !kernelShadowInitialized)
+                return;
+
+            KernelShadowSyncSkillFlags();
+
+            Kernel.SimulationCommand command = isTimeout
+                ? Kernel.SimulationCommand.Timeout()
+                : Kernel.SimulationCommand.SelectMask((int)selectedMask);
+
+            Kernel.GameKernel.Apply(ref kernelShadowState, command, kernelShadowRules, kernelShadowEncounters);
+        }
+
+        private void ApplyKernelShadowAdvanceDay()
+        {
+            if (!enableKernelShadow || !kernelShadowInitialized)
+                return;
+
+            KernelShadowSyncSkillFlags();
+
+            Kernel.GameKernel.Apply(
+                ref kernelShadowState,
+                Kernel.SimulationCommand.AdvanceDay(),
+                kernelShadowRules,
+                kernelShadowEncounters
+            );
+        }
+
+        private void ApplyKernelShadowHeal(int amount)
+        {
+            if (!enableKernelShadow || !kernelShadowInitialized)
+                return;
+
+            Kernel.GameKernel.Apply(
+                ref kernelShadowState,
+                Kernel.SimulationCommand.Heal(amount),
+                kernelShadowRules,
+                kernelShadowEncounters
+            );
+        }
+
+        private void ValidateKernelShadow(string context)
+        {
+            if (!enableKernelShadow || !kernelShadowInitialized)
+                return;
+
+            if (state == GameState.Resolve)
+                return;
+
+            Kernel.GameKernelPhase expectedPhase;
+            switch (state)
+            {
+                case GameState.Await:
+                    expectedPhase = Kernel.GameKernelPhase.AwaitingAnswer;
+                    break;
+                case GameState.DayEnd:
+                    expectedPhase = Kernel.GameKernelPhase.AwaitingDayAdvance;
+                    break;
+                case GameState.GameEnd:
+                    expectedPhase =
+                        socialBattery <= 0
+                            ? Kernel.GameKernelPhase.GameLost
+                            : Kernel.GameKernelPhase.GameWon;
+                    break;
+                default:
+                    return;
+            }
+
+            bool mismatch = false;
+            if (kernelShadowState.CurrentDay != currentDay)
+                mismatch = true;
+            if (kernelShadowState.EncounterIndexInDay != currentEncounterIndex)
+                mismatch = true;
+            if (kernelShadowState.Health != socialBattery)
+                mismatch = true;
+            if (kernelShadowState.TotalAnswers != totalAnswers)
+                mismatch = true;
+            if (kernelShadowState.CorrectAnswers != correctAnswers)
+                mismatch = true;
+            if (kernelShadowState.Phase != expectedPhase)
+                mismatch = true;
+
+            if (!mismatch && expectedPhase == Kernel.GameKernelPhase.AwaitingAnswer)
+            {
+                if (currentEncounter == null
+                    || kernelShadowEncounterIds == null
+                    || !kernelShadowEncounterIds.TryGetValue(currentEncounter, out int encounterId)
+                    || encounterId != kernelShadowState.CurrentEncounterId)
+                {
+                    mismatch = true;
+                }
+            }
+
+            if (!mismatch)
+                return;
+
+            ulong hash = Kernel.GameKernel.ComputeStateHash(in kernelShadowState);
+            Debug.LogError(
+                $"Kernel shadow mismatch ({context}) seed={gameSeed} hash=0x{hash:X16} " +
+                $"gmDay={currentDay} kDay={kernelShadowState.CurrentDay} " +
+                $"gmIdx={currentEncounterIndex} kIdx={kernelShadowState.EncounterIndexInDay} " +
+                $"gmHp={socialBattery} kHp={kernelShadowState.Health} " +
+                $"gmTotal={totalAnswers} kTotal={kernelShadowState.TotalAnswers} " +
+                $"gmCorrect={correctAnswers} kCorrect={kernelShadowState.CorrectAnswers} " +
+                $"gmState={state} kPhase={kernelShadowState.Phase}"
+            );
+        }
+#endif
     }
 }

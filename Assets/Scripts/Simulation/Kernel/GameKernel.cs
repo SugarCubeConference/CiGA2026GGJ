@@ -17,6 +17,8 @@ namespace MaskGame.Simulation.Kernel
                 TotalAnswers = 0,
                 CorrectAnswers = 0,
                 EncounterRng = DeterministicRng.Create(seed, DeterminismStreams.Encounters),
+                HasEloquence = 0,
+                EloquenceUsedThisEncounter = 0,
                 Phase = GameKernelPhase.AwaitingAnswer,
                 DayDeck = new int[deckSize],
                 PoolScratch = new int[encounterCount],
@@ -47,6 +49,9 @@ namespace MaskGame.Simulation.Kernel
                 case SimulationCommandType.AdvanceDay:
                     ApplyAdvanceDay(ref state, rules);
                     break;
+                case SimulationCommandType.Heal:
+                    ApplyHeal(ref state, command.Int0, rules);
+                    break;
             }
         }
 
@@ -61,6 +66,8 @@ namespace MaskGame.Simulation.Kernel
             Mix(ref hash, (uint)state.TotalAnswers);
             Mix(ref hash, (uint)state.CorrectAnswers);
             Mix(ref hash, (uint)state.EncounterRng.State);
+            Mix(ref hash, state.HasEloquence);
+            Mix(ref hash, state.EloquenceUsedThisEncounter);
             Mix(ref hash, (uint)state.Phase);
             Mix(ref hash, (uint)state.RemainingInDayDeck);
 
@@ -100,6 +107,15 @@ namespace MaskGame.Simulation.Kernel
             bool isNeutral = !isTimeout && encounter.IsNeutral(maskIndex);
 
             state.TotalAnswers++;
+            if (!isCorrect && !isNeutral)
+            {
+                if (state.HasEloquence != 0 && state.EloquenceUsedThisEncounter == 0)
+                {
+                    state.EloquenceUsedThisEncounter = 1;
+                    return;
+                }
+            }
+
             if (isCorrect)
             {
                 state.CorrectAnswers++;
@@ -123,6 +139,7 @@ namespace MaskGame.Simulation.Kernel
             if (state.RemainingInDayDeck > 0)
             {
                 state.CurrentEncounterId = state.DayDeck[state.RemainingInDayDeck - 1];
+                state.EloquenceUsedThisEncounter = 0;
                 return;
             }
 
@@ -159,6 +176,23 @@ namespace MaskGame.Simulation.Kernel
 
             state.RemainingInDayDeck = deckSize;
             state.CurrentEncounterId = state.DayDeck[state.RemainingInDayDeck - 1];
+            state.EloquenceUsedThisEncounter = 0;
+        }
+
+        private static void ApplyHeal(ref GameState state, int amount, in GameKernelRules rules)
+        {
+            if (amount <= 0)
+                return;
+
+            int value = state.Health + amount;
+            if (value > rules.MaxHealth)
+            {
+                state.Health = rules.MaxHealth;
+            }
+            else
+            {
+                state.Health = value;
+            }
         }
 
         private static void Mix(ref ulong hash, uint value)

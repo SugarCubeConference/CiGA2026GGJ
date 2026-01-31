@@ -5,6 +5,7 @@ namespace MaskGame.Simulation.Kernel
         SelectMask = 0,
         Timeout = 1,
         AdvanceDay = 2,
+        Heal = 3,
     }
 
     public readonly struct SimulationCommand
@@ -32,6 +33,10 @@ namespace MaskGame.Simulation.Kernel
         {
             return new SimulationCommand(SimulationCommandType.AdvanceDay);
         }
+
+        public static SimulationCommand Heal(int amount)
+        {
+            return new SimulationCommand(SimulationCommandType.Heal, amount);
+        }
     }
 }
-
