@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using MaskGame.Data;
+using MaskGame.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -42,11 +43,20 @@ namespace MaskGame.Managers
         [SerializeField]
         private Transform npcSpawnPoint;
 
+        [Header("Determinism")]
+        [SerializeField]
+        private bool useFixedSeed;
+
+        [SerializeField]
+        private int fixedSeed = 1;
+
         [SerializeField]
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
         private List<EncounterData> dayPool = new List<EncounterData>();
+        private uint gameSeed;
+        private DeterministicRng encounterRng;
 
         // 游戏状态
         private int currentDay = 1;
@@ -119,6 +129,13 @@ namespace MaskGame.Managers
         /// </summary>
         private void InitializeGame()
         {
+            gameSeed = useFixedSeed ? (uint)fixedSeed : (uint)System.Environment.TickCount;
+            encounterRng = DeterministicRng.Create(gameSeed, DeterminismStreams.Encounters);
+            if (SkillManager.Instance != null)
+            {
+                SkillManager.Instance.SetDeterministicSeed(gameSeed);
+            }
+
             currentDay = 1;
             currentEncounterIndex = 0;
             socialBattery = gameConfig.initialHealth; // 初始4条血，最大可达7条
@@ -152,8 +169,13 @@ namespace MaskGame.Managers
             else if (!resLoaded)
             {
                 resLoaded = true;
-                var loaded = Resources.LoadAll<EncounterData>(EncounterRes);
-                
+                EncounterData[] loaded = Resources.LoadAll<EncounterData>(EncounterRes);
+                System.Array.Sort(
+                    loaded,
+                    (a, b) =>
+                        string.CompareOrdinal(a != null ? a.name : string.Empty, b != null ? b.name : string.Empty)
+                );
+
                 encounterPool.Clear(); // 清空Inspector中可能配置的空数据
                 if (loaded != null && loaded.Length > 0)
                 {
@@ -205,7 +227,7 @@ namespace MaskGame.Managers
             // Fisher-Yates 洗牌
             for (int i = tempPool.Count - 1; i > 0; i--)
             {
-                int j = Random.Range(0, i + 1);
+                int j = encounterRng.NextInt(0, i + 1);
                 var temp = tempPool[i];
                 tempPool[i] = tempPool[j];
                 tempPool[j] = temp;
@@ -551,6 +573,7 @@ namespace MaskGame.Managers
         public int CurrentDay => currentDay;
         public int SocialBattery => socialBattery;
         public float RemainingTime => remainingTime;
+        public uint GameSeed => gameSeed;
         public GameConfig Config => gameConfig;
 
         /// <summary>

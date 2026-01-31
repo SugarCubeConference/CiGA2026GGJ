@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MaskGame.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
 using MaskGame.Data;
@@ -28,6 +29,7 @@ namespace MaskGame.Managers
         // 一次性技能使用状态（每次遭遇重置）
         private bool eloquenceUsedThisEncounter = false;
         private bool innerDeductionUsedThisEncounter = false;
+        private DeterministicRng skillRng;
 
         // 事件
         public UnityEvent<SkillData> OnSkillAcquired = new UnityEvent<SkillData>();
@@ -83,7 +85,7 @@ namespace MaskGame.Managers
             // 随机打乱
             for (int i = availableSkills.Count - 1; i > 0; i--)
             {
-                int j = Random.Range(0, i + 1);
+                int j = skillRng.NextInt(0, i + 1);
                 var temp = availableSkills[i];
                 availableSkills[i] = availableSkills[j];
                 availableSkills[j] = temp;
@@ -253,6 +255,11 @@ namespace MaskGame.Managers
             eloquenceUsedThisEncounter = false;
             innerDeductionUsedThisEncounter = false;
             OnSkillsUpdated.Invoke(new List<SkillData>());
+        }
+
+        public void SetDeterministicSeed(uint rootSeed)
+        {
+            skillRng = DeterministicRng.Create(rootSeed, DeterminismStreams.Skills);
         }
     }
 }
