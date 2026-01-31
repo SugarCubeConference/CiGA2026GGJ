@@ -251,8 +251,10 @@ namespace MaskGame.UI
         /// <summary>
         /// 显示答案反馈 - 从鼠标位置飘出文本
         /// </summary>
-        private void ShowAnswerFeedback(bool isCorrect, string feedbackText)
+        private void ShowAnswerFeedback(AnswerOutcome outcome, string feedbackText)
         {
+            bool isCorrect = outcome == AnswerOutcome.Correct;
+
             // 深绿色 (0, 128, 0) 和 深红色 (139, 0, 0)
             Color feedbackColor = isCorrect ? new Color(0f, 0.5f, 0f) : new Color(0.545f, 0f, 0f);
 

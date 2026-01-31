@@ -7,6 +7,13 @@ using UnityEngine.SceneManagement;
 
 namespace MaskGame.Managers
 {
+    public enum AnswerOutcome
+    {
+        Correct,
+        Wrong,
+        Timeout,
+    }
+
     /// <summary>
     /// 游戏管理器 - 控制游戏流程、天数、难度
     /// </summary>
@@ -35,7 +42,6 @@ namespace MaskGame.Managers
         private int currentEncounterIndex = 0;
         private int socialBattery;
         private float remainingTime;
-        private bool isGameOver = false;
         private GameState state;
 
         // 统计数据
@@ -51,7 +57,8 @@ namespace MaskGame.Managers
         public UnityEvent<int> OnBatteryChanged = new UnityEvent<int>();
         public UnityEvent<float> OnTimeChanged = new UnityEvent<float>();
         public UnityEvent<EncounterData> OnNewEncounter = new UnityEvent<EncounterData>();
-        public UnityEvent<bool, string> OnAnswerResult = new UnityEvent<bool, string>(); // 添加反馈文本参数
+        public UnityEvent<AnswerOutcome, string> OnAnswerResult =
+            new UnityEvent<AnswerOutcome, string>();
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
 
@@ -75,7 +82,7 @@ namespace MaskGame.Managers
 
         private void Update()
         {
-            if (isGameOver || state != GameState.Await)
+            if (state != GameState.Await)
                 return;
 
             // 倒计时
@@ -101,7 +108,6 @@ namespace MaskGame.Managers
             currentDay = 1;
             currentEncounterIndex = 0;
             socialBattery = gameConfig.fixedHealth; // 固定4条血
-            isGameOver = false;
             state = GameState.Resolve;
             totalAnswers = 0;
             correctAnswers = 0;
@@ -180,7 +186,7 @@ namespace MaskGame.Managers
         /// </summary>
         public void SelectMask(MaskType selectedMask)
         {
-            if (isGameOver || state != GameState.Await)
+            if (state != GameState.Await)
                 return;
             state = GameState.Resolve;
             ProcessAnswer(selectedMask, false);
@@ -191,10 +197,22 @@ namespace MaskGame.Managers
         /// </summary>
         private void ProcessAnswer(MaskType selectedMask, bool isTimeout)
         {
-            bool isCorrect = !isTimeout && (selectedMask == currentEncounter.correctMask);
+            AnswerOutcome outcome;
+            if (isTimeout)
+            {
+                outcome = AnswerOutcome.Timeout;
+            }
+            else if (selectedMask == currentEncounter.correctMask)
+            {
+                outcome = AnswerOutcome.Correct;
+            }
+            else
+            {
+                outcome = AnswerOutcome.Wrong;
+            }
 
             totalAnswers++;
-            if (isCorrect)
+            if (outcome == AnswerOutcome.Correct)
             {
                 correctAnswers++;
             }
@@ -214,9 +232,9 @@ namespace MaskGame.Managers
                 feedbackText = "超时了！";
             }
 
-            OnAnswerResult.Invoke(isCorrect, feedbackText);
+            OnAnswerResult.Invoke(outcome, feedbackText);
 
-            if (!isCorrect)
+            if (outcome != AnswerOutcome.Correct)
             {
                 // 选错或超时 - 扣除社交电池
                 socialBattery -= gameConfig.batteryPenalty;
@@ -280,7 +298,6 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameWin()
         {
-            isGameOver = true;
             state = GameState.GameEnd;
 
             // 保存统计数据
@@ -303,7 +320,6 @@ namespace MaskGame.Managers
         /// </summary>
         private void GameOver()
         {
-            isGameOver = true;
             state = GameState.GameEnd;
             OnGameOver.Invoke();
 
