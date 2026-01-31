@@ -42,7 +42,7 @@ namespace MaskGame.Managers
         public UnityEvent<int> OnBatteryChanged = new UnityEvent<int>();
         public UnityEvent<float> OnTimeChanged = new UnityEvent<float>();
         public UnityEvent<EncounterData> OnNewEncounter = new UnityEvent<EncounterData>();
-        public UnityEvent<bool, string> OnAnswerResult = new UnityEvent<bool, string>(); // 添加反馈文本参数
+        public UnityEvent<bool, bool, string> OnAnswerResult = new UnityEvent<bool, bool, string>();
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
 
@@ -200,7 +200,7 @@ namespace MaskGame.Managers
                 feedbackText = "超时了！";
             }
 
-            OnAnswerResult.Invoke(isCorrect, feedbackText);
+            OnAnswerResult.Invoke(isCorrect, isTimeout, feedbackText);
 
             if (!isCorrect)
             {
