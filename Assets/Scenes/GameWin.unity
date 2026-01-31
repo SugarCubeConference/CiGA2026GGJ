@@ -180,7 +180,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: New Text
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
@@ -627,7 +627,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: WIN!
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -716,7 +716,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: winner
+  m_text: "\u60A8\u7CBE\u901A\u4EBA\u6027\uFF01"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_sharedMaterial: {fileID: 490601312794649053, guid: ac42463d5c906224a830122683c00cbc, type: 2}
@@ -805,7 +805,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Score: 0/0'
+  m_text: "\u8BC6\u4EBA\u79EF\u5206: 0/0"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_sharedMaterial: {fileID: 490601312794649053, guid: ac42463d5c906224a830122683c00cbc, type: 2}
@@ -1169,7 +1169,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Restart
+  m_text: "\u91CD\u65B0\u6E38\u620F"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_sharedMaterial: {fileID: 490601312794649053, guid: ac42463d5c906224a830122683c00cbc, type: 2}
@@ -1277,7 +1277,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: End
+  m_text: "\u9000\u51FA\u6E38\u620F"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ac42463d5c906224a830122683c00cbc, type: 2}
   m_sharedMaterial: {fileID: 490601312794649053, guid: ac42463d5c906224a830122683c00cbc, type: 2}
@@ -1412,14 +1412,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.4745098}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 517d4250e1ae18a4d972212b8fac340e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
