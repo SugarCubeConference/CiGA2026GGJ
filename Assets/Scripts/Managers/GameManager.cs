@@ -46,6 +46,8 @@ namespace MaskGame.Managers
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
+        private int poolDay = -1;
+        private List<EncounterData> dayPool = new List<EncounterData>();
 
         // 游戏状态
         private int currentDay = 1;
@@ -121,6 +123,7 @@ namespace MaskGame.Managers
             currentEncounterIndex = 0;
             socialBattery = gameConfig.initialHealth; // 初始4条血，最大可达7条
             state = GameState.Resolve;
+            isPaused = false;
             totalAnswers = 0;
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
@@ -134,34 +137,33 @@ namespace MaskGame.Managers
 
         private List<EncounterData> GetPool()
         {
-            List<EncounterData> allEncounters = new List<EncounterData>();
-            
+            if (poolDay == currentDay)
+                return dayPool;
+
+            poolDay = currentDay;
+            dayPool.Clear();
+
+            List<EncounterData> src = encounterPool;
             if (encounterSet != null)
             {
-                allEncounters = encounterSet.items;
+                src = encounterSet.items;
             }
             else if (!resLoaded && encounterPool.Count == 0)
             {
                 resLoaded = true;
                 encounterPool.AddRange(Resources.LoadAll<EncounterData>(EncounterRes));
-                allEncounters = encounterPool;
-            }
-            else
-            {
-                allEncounters = encounterPool;
             }
 
-            // 过滤当前day的对话
-            List<EncounterData> filteredEncounters = new List<EncounterData>();
-            foreach (var encounter in allEncounters)
+            for (int i = 0; i < src.Count; i++)
             {
+                EncounterData encounter = src[i];
                 if (encounter.dayNumber == currentDay)
                 {
-                    filteredEncounters.Add(encounter);
+                    dayPool.Add(encounter);
                 }
             }
 
-            return filteredEncounters;
+            return dayPool;
         }
 
         /// <summary>
@@ -241,7 +243,7 @@ namespace MaskGame.Managers
 
         private void ResolveAnswer(MaskType selectedMask, bool isTimeout)
         {
-            if (state != GameState.Await)
+            if (state != GameState.Await || isPaused)
                 return;
 
             state = GameState.Resolve;
@@ -457,8 +459,13 @@ namespace MaskGame.Managers
             // 生成新NPC
             if (encounter.npcPrefab != null && npcSpawnPoint != null)
             {
-                currentNPC = Instantiate(encounter.npcPrefab, npcSpawnPoint.position, Quaternion.identity, npcSpawnPoint);
-                
+                currentNPC = Instantiate(
+                    encounter.npcPrefab,
+                    npcSpawnPoint.position,
+                    Quaternion.identity,
+                    npcSpawnPoint
+                );
+
                 // 添加入场动画组件（如果预制体上没有）
                 if (currentNPC.GetComponent<MaskGame.UI.NPCEntranceAnimation>() == null)
                 {
