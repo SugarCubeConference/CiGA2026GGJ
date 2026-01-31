@@ -30,10 +30,19 @@ namespace MaskGame.UI
         [SerializeField]
         private int fontSize = 18;
 
+        [Header("悬停文字缩放")]
+        [SerializeField]
+        private float textHoverScale = 1.5f; // 悬停时文字放大倍数
+
+        [SerializeField]
+        private float textScaleSpeed = 10f; // 文字缩放速度
+
         private GameObject tooltipPanel;
         private TextMeshProUGUI tooltipText;
         private RectTransform tooltipRect;
         private Canvas canvas;
+        private bool isTextHovering = false;
+        private float currentTextScale = 1f;
 
         private void Awake()
         {
@@ -42,6 +51,17 @@ namespace MaskGame.UI
             if (canvas == null)
             {
                 Debug.LogError("MaskOptionUI: 无法找到Canvas组件！");
+            }
+        }
+
+        private void Update()
+        {
+            // 平滑更新文字缩放
+            if (tooltipText != null)
+            {
+                float targetScale = isTextHovering ? textHoverScale : 1f;
+                currentTextScale = Mathf.Lerp(currentTextScale, targetScale, Time.deltaTime * textScaleSpeed);
+                tooltipText.transform.localScale = Vector3.one * currentTextScale;
             }
         }
 
@@ -103,6 +123,9 @@ namespace MaskGame.UI
             if (string.IsNullOrEmpty(optionText))
                 return;
 
+            // 启动文字缩放
+            isTextHovering = true;
+
             // 延迟创建tooltip
             if (tooltipPanel == null)
             {
@@ -141,6 +164,9 @@ namespace MaskGame.UI
         /// </summary>
         public void OnPointerExit(PointerEventData eventData)
         {
+            // 停止文字缩放
+            isTextHovering = false;
+
             if (tooltipPanel != null)
             {
                 tooltipPanel.SetActive(false);

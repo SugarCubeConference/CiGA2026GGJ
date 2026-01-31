@@ -396,7 +396,7 @@ namespace MaskGame.UI
         }
 
         /// <summary>
-        /// 飘浮动画 - 向上移动并淡出
+        /// 飘浮动画 - 向上移动并淡出，字体先放大再缩小
         /// </summary>
         private System.Collections.IEnumerator FloatingAnimation(
             GameObject obj,
@@ -404,13 +404,15 @@ namespace MaskGame.UI
             TextMeshProUGUI tmpText
         )
         {
-            float duration = 1.5f; // 动画总时长
+            float duration = 3f; // 动画总时长
             float moveDistance = 100f; // 向上移动距离
             float elapsed = 0f;
 
             Vector3 startPos = rectTransform.localPosition;
             Vector3 targetPos = startPos + new Vector3(0, moveDistance, 0);
             Color startColor = tmpText.color;
+            float baseFontSize = tmpText.fontSize;
+            float maxFontSize = baseFontSize * 1.25f; // 最大放大1.25倍
 
             while (elapsed < duration)
             {
@@ -419,6 +421,21 @@ namespace MaskGame.UI
 
                 // 向上移动（缓动）
                 rectTransform.localPosition = Vector3.Lerp(startPos, targetPos, progress);
+
+                // 字体大小动画：前30%放大到1.25倍，然后缩回
+                float scaleProgress;
+                if (progress < 0.3f)
+                {
+                    // 前30%时间放大
+                    scaleProgress = progress / 0.3f;
+                    tmpText.fontSize = Mathf.Lerp(baseFontSize, maxFontSize, scaleProgress);
+                }
+                else
+                {
+                    // 后70%时间缩回
+                    scaleProgress = (progress - 0.3f) / 0.7f;
+                    tmpText.fontSize = Mathf.Lerp(maxFontSize, baseFontSize, scaleProgress);
+                }
 
                 // 淡出（后半段加速）
                 float alpha = Mathf.Lerp(1f, 0f, Mathf.Pow(progress, 2));
