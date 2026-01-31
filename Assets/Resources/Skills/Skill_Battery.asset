@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f17e0280d1035e40bfabc9c1d6ddc7b, type: 3}
+  m_Name: Skill_Battery
+  m_EditorClassIdentifier: 
+  skillType: 0
+  skillName: "\u7535\u6C60"
+  description: "\u589E\u52A020%\u56DE\u7B54\u65F6\u957F\uFF0C\u8BA9\u4F60\u6709\u66F4\u591A\u601D\u8003\u65F6\u95F4"
+  icon: {fileID: 0}
+  effectValue: 20
+  stackable: 1
+  maxStacks: 3

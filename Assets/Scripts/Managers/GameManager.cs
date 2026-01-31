@@ -74,6 +74,7 @@ namespace MaskGame.Managers
             new UnityEvent<AnswerOutcome, string>();
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
+        public UnityEvent OnShowSkillSelection = new UnityEvent(); // 显示技能选择事件
 
         private void Awake()
         {
@@ -224,7 +225,16 @@ namespace MaskGame.Managers
             // 生成NPC
             SpawnNPC(currentEncounter);
 
-            remainingTime = gameConfig.GetDecisionTime(currentDay); // 根据天数获取时间
+            // 获取决策时间（应用电池技能加成）
+            float baseTime = gameConfig.GetDecisionTime(currentDay);
+            float timeBonus = SkillManager.Instance != null ? SkillManager.Instance.GetTimeBonus() : 1f;
+            remainingTime = baseTime * timeBonus;
+
+            // 重置遭遇相关的技能状态
+            if (SkillManager.Instance != null)
+            {
+                SkillManager.Instance.ResetEncounterSkillStates();
+            }
 
             OnNewEncounter.Invoke(currentEncounter);
             OnTimeChanged.Invoke(remainingTime);
@@ -378,7 +388,54 @@ namespace MaskGame.Managers
             }
             else
             {
+                // 显示技能选择面板（而不是直接进入下一天）
+                ShowSkillSelection();
+            }
+        }
+
+        /// <summary>
+        /// 显示技能选择面板
+        /// </summary>
+        private void ShowSkillSelection()
+        {
+            Debug.Log("[技能系统] 显示技能选择面板");
+            OnShowSkillSelection.Invoke();
+            
+            // 查找AwardPanelUI（包括禁用的对象）
+            var awardPanel = FindObjectOfType<MaskGame.UI.AwardPanelUI>(true);
+            if (awardPanel != null)
+            {
+                Debug.Log("[技能系统] 找到AwardPanelUI，调用ShowSkillSelection");
+                awardPanel.ShowSkillSelection();
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] AwardPanelUI未找到，跳过技能选择");
                 StartCoroutine(AdvanceToNextDay());
+            }
+        }
+
+        /// <summary>
+        /// 技能选择完成后调用
+        /// </summary>
+        public void OnSkillSelectionComplete()
+        {
+            Debug.Log("[技能系统] 技能选择完成，进入下一天");
+            StartCoroutine(AdvanceToNextDay());
+        }
+
+        /// <summary>
+        /// 恢复生命值（由SkillManager调用）
+        /// </summary>
+        public void RestoreHealth(int amount)
+        {
+            int oldHealth = socialBattery;
+            socialBattery = Mathf.Min(socialBattery + amount, gameConfig.maxHealth);
+            
+            if (socialBattery != oldHealth)
+            {
+                OnBatteryChanged.Invoke(socialBattery);
+                Debug.Log($"[GameManager] 生命值恢复: {oldHealth} -> {socialBattery}");
             }
         }
 
