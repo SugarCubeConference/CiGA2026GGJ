@@ -55,6 +55,7 @@ namespace MaskGame.Managers
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
         private List<EncounterData> dayPool = new List<EncounterData>();
+        private List<EncounterData> usedEncounters = new List<EncounterData>(); // 已使用的encounters
         private uint gameSeed;
         private DeterministicRng encounterRng;
 
@@ -144,6 +145,7 @@ namespace MaskGame.Managers
             totalAnswers = 0;
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
+            usedEncounters.Clear(); // 清空已使用encounters
 
             OnDayChanged.Invoke(currentDay);
             OnBatteryChanged.Invoke(socialBattery);
@@ -214,30 +216,45 @@ namespace MaskGame.Managers
         }
 
         /// <summary>
-        /// 每天开始时随机抽取对话
+        /// 每天开始时随机抽取对话（不重复）
         /// </summary>
         private void ShuffleEncounters()
         {
             List<EncounterData> pool = GetPool();
             shuffledEncounters.Clear();
 
-            // 创建临时列表用于抽取
-            List<EncounterData> tempPool = new List<EncounterData>(pool);
-
-            // Fisher-Yates 洗牌
-            for (int i = tempPool.Count - 1; i > 0; i--)
+            // 创建未使用的encounters列表
+            List<EncounterData> availablePool = new List<EncounterData>();
+            for (int i = 0; i < pool.Count; i++)
             {
-                int j = encounterRng.NextInt(0, i + 1);
-                var temp = tempPool[i];
-                tempPool[i] = tempPool[j];
-                tempPool[j] = temp;
+                if (!usedEncounters.Contains(pool[i]))
+                {
+                    availablePool.Add(pool[i]);
+                }
             }
 
-            // 抽取指定数量（每天5条）
-            int count = Mathf.Min(gameConfig.encountersPerDay, tempPool.Count);
+            // 如果没有可用的encounters了，检查是否完成游戏
+            if (availablePool.Count == 0)
+            {
+                UnityEngine.Debug.Log("所有encounters已用完，游戏胜利！");
+                GameWin();
+                return;
+            }
+
+            // Fisher-Yates 洗牌
+            for (int i = availablePool.Count - 1; i > 0; i--)
+            {
+                int j = encounterRng.NextInt(0, i + 1);
+                var temp = availablePool[i];
+                availablePool[i] = availablePool[j];
+                availablePool[j] = temp;
+            }
+
+            // 抽取指定数量（每天5条），如果剩余不足5条则抽取全部
+            int count = Mathf.Min(gameConfig.encountersPerDay, availablePool.Count);
             for (int i = 0; i < count; i++)
             {
-                shuffledEncounters.Add(tempPool[i]);
+                shuffledEncounters.Add(availablePool[i]);
             }
         }
 
@@ -266,6 +283,12 @@ namespace MaskGame.Managers
             int lastIndex = shuffledEncounters.Count - 1;
             currentEncounter = shuffledEncounters[lastIndex];
             shuffledEncounters.RemoveAt(lastIndex);
+
+            // 标记为已使用
+            if (!usedEncounters.Contains(currentEncounter))
+            {
+                usedEncounters.Add(currentEncounter);
+            }
 
             SpawnNPC(currentEncounter);
 
