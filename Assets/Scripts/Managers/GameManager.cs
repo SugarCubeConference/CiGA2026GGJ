@@ -141,25 +141,42 @@ namespace MaskGame.Managers
             if (dayPool.Count > 0)
                 return dayPool;
 
-            IReadOnlyList<EncounterData> src = encounterPool;
-            if (encounterSet != null)
+            IReadOnlyList<EncounterData> src = null;
+            
+            // 优先使用encounterSet
+            if (encounterSet != null && encounterSet.Items.Count > 0)
             {
                 src = encounterSet.Items;
             }
-            else if (!resLoaded && encounterPool.Count == 0)
+            // 如果没有encounterSet，从Resources加载
+            else if (!resLoaded)
             {
                 resLoaded = true;
-                encounterPool.AddRange(Resources.LoadAll<EncounterData>(EncounterRes));
+                var loaded = Resources.LoadAll<EncounterData>(EncounterRes);
+                
+                encounterPool.Clear(); // 清空Inspector中可能配置的空数据
+                if (loaded != null && loaded.Length > 0)
+                {
+                    encounterPool.AddRange(loaded);
+                }
+                src = encounterPool;
+            }
+            // 使用已加载的
+            else
+            {
                 src = encounterPool;
             }
 
             // 添加所有encounters（不再按天数过滤）
             dayPool.Clear();
-            for (int i = 0; i < src.Count; i++)
+            if (src != null)
             {
-                if (src[i] != null)
+                for (int i = 0; i < src.Count; i++)
                 {
-                    dayPool.Add(src[i]);
+                    if (src[i] != null)
+                    {
+                        dayPool.Add(src[i]);
+                    }
                 }
             }
 
@@ -210,14 +227,18 @@ namespace MaskGame.Managers
             if (shuffledEncounters.Count == 0)
             {
                 ShuffleEncounters();
+            }
 
-                if (shuffledEncounters.Count == 0)
-                {
-                    UnityEngine.Debug.LogWarning(
-                        $"GameManager: No encounters found for Day {currentDay}. Check EncounterData dayNumber settings."
-                    );
-                    return;
-                }
+            // 如果ShuffleEncounters后仍然为空，说明没有可用对话
+            if (shuffledEncounters.Count == 0)
+            {
+                UnityEngine.Debug.LogError(
+                    $"GameManager: 没有可用的对话！请检查：\n" +
+                    $"1. Resources/Encounters/ 文件夹是否存在\n" +
+                    $"2. 文件夹中是否有EncounterData资源\n" +
+                    $"3. 或者在Inspector中配置encounterSet字段"
+                );
+                return;
             }
 
             int lastIndex = shuffledEncounters.Count - 1;
