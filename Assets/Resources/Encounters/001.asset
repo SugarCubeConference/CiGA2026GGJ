@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96f1e98aeee92244a846d1006fbfbf0, type: 3}
   m_Name: 001
   m_EditorClassIdentifier: 
-  dialogueText: "\u6211\u6628\u5929<b style=\"background-color: #FFFFE0;\">\u9884\u8D2D</b>\u4E86\u521A\u653E\u51FA\u5BA3\u4F20\u7247\u7684\u300A\u98CE\u95F8horizon6\u300B\uFF0C\u8FD9\u6E38\u620F\u592A<b
-    style=\"background-color: #FFFFE0;\">\u5389\u5BB3</b>\u4E86"
+  dialogueText: "\u6211\u6628\u5929<b><color=#999900>\u9884\u8D2D</color></b>\u4E86\u521A\u653E\u51FA\u5BA3\u4F20\u7247\u7684\u300A\u98CE\u95F8horizon6\u300B\uFF0C\u8FD9\u6E38\u620F\u592A<b><color=#999900>\u5389\u5BB3</color></b>\u4E86"
   optionTexts:
   - "\u4F60\u770B\u5B9E\u9645\u4E86\u5417\uFF0C\u76F8\u6BD4\u4E0A\u4E00\u4EE3\u7684\u8FDB\u6B65\u5728\u54EA\u5462\uFF1F"
   - "\u53EF\u60DC\u6211\u6CA1\u592A\u7A77\u4E86\uFF0C\u6CA1\u94B1\u4E70"

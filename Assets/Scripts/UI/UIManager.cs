@@ -71,6 +71,7 @@ namespace MaskGame.UI
         private string normalSlashColorHex;
         private string warningSlashColorHex;
         private string cachedSlashString;
+        private Color[] originalMaskColors; // 保存mask的原始颜色
 
         private void Awake()
         {
@@ -93,6 +94,19 @@ namespace MaskGame.UI
             cachedCanvas = GetComponentInParent<Canvas>();
             normalSlashColorHex = ColorUtility.ToHtmlStringRGB(normalSlashColor);
             warningSlashColorHex = ColorUtility.ToHtmlStringRGB(warningSlashColor);
+
+            // 保存mask的原始颜色
+            if (maskImages != null && maskImages.Length > 0)
+            {
+                originalMaskColors = new Color[maskImages.Length];
+                for (int i = 0; i < maskImages.Length; i++)
+                {
+                    if (maskImages[i] != null)
+                    {
+                        originalMaskColors[i] = maskImages[i].color;
+                    }
+                }
+            }
 
             // 设置面具按钮
             SetupMaskButtons();
@@ -263,8 +277,11 @@ namespace MaskGame.UI
                 {
                     if (maskImages[i] != null)
                     {
-                        // 重置颜色（清除上次的标红）
-                        maskImages[i].color = Color.white;
+                        // 重置颜色（清除上次的标红，恢复原始颜色）
+                        if (originalMaskColors != null && i < originalMaskColors.Length)
+                        {
+                            maskImages[i].color = originalMaskColors[i];
+                        }
 
                         MaskOptionUI optionUI = maskImages[i].GetComponent<MaskOptionUI>();
                         if (optionUI != null)

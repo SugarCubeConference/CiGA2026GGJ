@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96f1e98aeee92244a846d1006fbfbf0, type: 3}
   m_Name: 006
   m_EditorClassIdentifier: 
-  dialogueText: "\u5B66\u957F\u6211<b style=\"background-color: #FF6B6B;\">\u559C\u6B22</b>\u4F60\uFF01"
+  dialogueText: "\u5B66\u957F\u6211<b><color=#CC0000>\u559C\u6B22</color></b>\u4F60\uFF01"
   optionTexts:
   - "\u6211\u62D2\u7EDD\u7537\u7537"
   - "\u7B49\u4F60\u957F\u5927\u4E86\u518D\u8BF4\u5427"

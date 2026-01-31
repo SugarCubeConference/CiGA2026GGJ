@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96f1e98aeee92244a846d1006fbfbf0, type: 3}
   m_Name: 002
   m_EditorClassIdentifier: 
-  dialogueText: "\u4F60\u665A\u4E0A<b style=\"background-color: #40E0D0;\">\u58F0\u97F3</b>\u80FD\u4E0D\u80FD<b
-    style=\"background-color: #40E0D0;\">\u5C0F\u4E00\u70B9</b>?"
+  dialogueText: "\u4F60\u665A\u4E0A<b><color=#008B8B>\u58F0\u97F3</color></b>\u80FD\u4E0D\u80FD<b><color=#008B8B>\u5C0F\u4E00\u70B9</color></b>?"
   optionTexts:
   - "\u6211\u7231\u8BF4\u5565\u8BF4\u5565"
   - "\u90A3\u4F60\u547C\u565C\u58F0\u4E5F\u5C0F\u70B9\u54E6"
