@@ -2,19 +2,18 @@ namespace MaskGame.Simulation.Kernel
 {
     public readonly struct EncounterDefinition
     {
-        public readonly int CorrectMaskIndex;
-        public readonly byte NeutralMaskBits;
+        public readonly int CorrectMask;
+        public readonly byte NeutralBits;
 
-        public EncounterDefinition(int correctMaskIndex, byte neutralMaskBits)
+        public EncounterDefinition(int correctMask, byte neutralBits)
         {
-            CorrectMaskIndex = correctMaskIndex;
-            NeutralMaskBits = neutralMaskBits;
+            CorrectMask = correctMask;
+            NeutralBits = neutralBits;
         }
 
         public bool IsNeutral(int maskIndex)
         {
-            return (NeutralMaskBits & (1 << maskIndex)) != 0;
+            return (NeutralBits & (1 << maskIndex)) != 0;
         }
     }
 }
-

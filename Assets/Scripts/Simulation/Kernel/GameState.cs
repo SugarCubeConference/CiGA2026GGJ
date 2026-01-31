@@ -2,10 +2,10 @@ using MaskGame.Simulation;
 
 namespace MaskGame.Simulation.Kernel
 {
-    public enum GameKernelPhase : byte
+    public enum GamePhase : byte
     {
-        AwaitingAnswer = 0,
-        AwaitingDayAdvance = 1,
+        WaitAns = 0,
+        WaitDay = 1,
         GameWon = 2,
         GameLost = 3,
     }
@@ -14,18 +14,18 @@ namespace MaskGame.Simulation.Kernel
     {
         public uint Seed;
         public int CurrentDay;
-        public int EncounterIndexInDay;
-        public int CurrentEncounterId;
+        public int DayIdx;
+        public int EncId;
         public int Health;
         public int TotalAnswers;
         public int CorrectAnswers;
         public DeterministicRng EncounterRng;
-        public byte HasEloquence;
-        public byte EloquenceUsedThisEncounter;
-        public GameKernelPhase Phase;
+        public byte HasElo;
+        public byte EloUsed;
+        public GamePhase Phase;
 
         public int[] DayDeck;
-        public int RemainingInDayDeck;
+        public int DeckLeft;
         public int[] PoolScratch;
     }
 }

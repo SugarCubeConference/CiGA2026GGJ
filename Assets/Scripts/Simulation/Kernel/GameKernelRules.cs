@@ -1,27 +1,26 @@
 namespace MaskGame.Simulation.Kernel
 {
-    public readonly struct GameKernelRules
+    public readonly struct GameRules
     {
         public readonly int TotalDays;
-        public readonly int EncountersPerDay;
+        public readonly int DayEnc;
         public readonly int InitialHealth;
         public readonly int MaxHealth;
         public readonly int BatteryPenalty;
 
-        public GameKernelRules(
+        public GameRules(
             int totalDays,
-            int encountersPerDay,
+            int dayEnc,
             int initialHealth,
             int maxHealth,
             int batteryPenalty
         )
         {
             TotalDays = totalDays;
-            EncountersPerDay = encountersPerDay;
+            DayEnc = dayEnc;
             InitialHealth = initialHealth;
             MaxHealth = maxHealth;
             BatteryPenalty = batteryPenalty;
         }
     }
 }
-

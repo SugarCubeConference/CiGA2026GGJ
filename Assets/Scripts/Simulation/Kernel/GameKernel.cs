@@ -5,21 +5,24 @@ namespace MaskGame.Simulation.Kernel
 {
     public static class GameKernel
     {
-        public static GameState CreateNewGame(uint seed, in GameKernelRules rules, int encounterCount)
+        private const ulong Fnv64Offset = 14695981039346656037UL;
+        private const ulong Fnv64Prime = 1099511628211UL;
+
+        public static GameState NewGame(uint seed, in GameRules rules, int encounterCount)
         {
-            int deckSize = Math.Min(rules.EncountersPerDay, encounterCount);
+            int deckSize = Math.Min(rules.DayEnc, encounterCount);
             GameState state = new GameState
             {
                 Seed = seed,
                 CurrentDay = 1,
-                EncounterIndexInDay = 0,
+                DayIdx = 0,
                 Health = rules.InitialHealth,
                 TotalAnswers = 0,
                 CorrectAnswers = 0,
                 EncounterRng = DeterministicRng.Create(seed, DeterminismStreams.Encounters),
-                HasEloquence = 0,
-                EloquenceUsedThisEncounter = 0,
-                Phase = GameKernelPhase.AwaitingAnswer,
+                HasElo = 0,
+                EloUsed = 0,
+                Phase = GamePhase.WaitAns,
                 DayDeck = new int[deckSize],
                 PoolScratch = new int[encounterCount],
             };
@@ -31,45 +34,45 @@ namespace MaskGame.Simulation.Kernel
         public static void Apply(
             ref GameState state,
             in SimulationCommand command,
-            in GameKernelRules rules,
+            in GameRules rules,
             EncounterDefinition[] encounters
         )
         {
-            if (state.Phase == GameKernelPhase.GameWon || state.Phase == GameKernelPhase.GameLost)
+            if (state.Phase == GamePhase.GameWon || state.Phase == GamePhase.GameLost)
                 return;
 
             switch (command.Type)
             {
-                case SimulationCommandType.SelectMask:
+                case CmdType.SelectMask:
                     ApplyAnswer(ref state, command.Int0, false, rules, encounters);
                     break;
-                case SimulationCommandType.Timeout:
+                case CmdType.Timeout:
                     ApplyAnswer(ref state, 0, true, rules, encounters);
                     break;
-                case SimulationCommandType.AdvanceDay:
-                    ApplyAdvanceDay(ref state, rules);
+                case CmdType.AdvanceDay:
+                    ApplyDay(ref state, rules);
                     break;
-                case SimulationCommandType.Heal:
+                case CmdType.Heal:
                     ApplyHeal(ref state, command.Int0, rules);
                     break;
             }
         }
 
-        public static ulong ComputeStateHash(in GameState state)
+        public static ulong HashState(in GameState state)
         {
-            ulong hash = 14695981039346656037UL;
-            Mix(ref hash, (uint)state.Seed);
+            ulong hash = Fnv64Offset;
+            Mix(ref hash, state.Seed);
             Mix(ref hash, (uint)state.CurrentDay);
-            Mix(ref hash, (uint)state.EncounterIndexInDay);
-            Mix(ref hash, (uint)state.CurrentEncounterId);
+            Mix(ref hash, (uint)state.DayIdx);
+            Mix(ref hash, (uint)state.EncId);
             Mix(ref hash, (uint)state.Health);
             Mix(ref hash, (uint)state.TotalAnswers);
             Mix(ref hash, (uint)state.CorrectAnswers);
-            Mix(ref hash, (uint)state.EncounterRng.State);
-            Mix(ref hash, state.HasEloquence);
-            Mix(ref hash, state.EloquenceUsedThisEncounter);
+            Mix(ref hash, state.EncounterRng.State);
+            Mix(ref hash, state.HasElo);
+            Mix(ref hash, state.EloUsed);
             Mix(ref hash, (uint)state.Phase);
-            Mix(ref hash, (uint)state.RemainingInDayDeck);
+            Mix(ref hash, (uint)state.DeckLeft);
 
             int[] deck = state.DayDeck;
             for (int i = 0; i < deck.Length; i++)
@@ -80,14 +83,14 @@ namespace MaskGame.Simulation.Kernel
             return hash;
         }
 
-        private static void ApplyAdvanceDay(ref GameState state, in GameKernelRules rules)
+        private static void ApplyDay(ref GameState state, in GameRules rules)
         {
-            if (state.Phase != GameKernelPhase.AwaitingDayAdvance)
+            if (state.Phase != GamePhase.WaitDay)
                 return;
 
             state.CurrentDay++;
-            state.EncounterIndexInDay = 0;
-            state.Phase = GameKernelPhase.AwaitingAnswer;
+            state.DayIdx = 0;
+            state.Phase = GamePhase.WaitAns;
             BeginDay(ref state, state.DayDeck.Length);
         }
 
@@ -95,23 +98,23 @@ namespace MaskGame.Simulation.Kernel
             ref GameState state,
             int maskIndex,
             bool isTimeout,
-            in GameKernelRules rules,
+            in GameRules rules,
             EncounterDefinition[] encounters
         )
         {
-            if (state.Phase != GameKernelPhase.AwaitingAnswer)
+            if (state.Phase != GamePhase.WaitAns)
                 return;
 
-            EncounterDefinition encounter = encounters[state.CurrentEncounterId];
-            bool isCorrect = !isTimeout && maskIndex == encounter.CorrectMaskIndex;
+            EncounterDefinition encounter = encounters[state.EncId];
+            bool isCorrect = !isTimeout && maskIndex == encounter.CorrectMask;
             bool isNeutral = !isTimeout && encounter.IsNeutral(maskIndex);
 
             state.TotalAnswers++;
             if (!isCorrect && !isNeutral)
             {
-                if (state.HasEloquence != 0 && state.EloquenceUsedThisEncounter == 0)
+                if (state.HasElo != 0 && state.EloUsed == 0)
                 {
-                    state.EloquenceUsedThisEncounter = 1;
+                    state.EloUsed = 1;
                     return;
                 }
             }
@@ -125,27 +128,27 @@ namespace MaskGame.Simulation.Kernel
                 state.Health -= rules.BatteryPenalty;
                 if (state.Health <= 0)
                 {
-                    state.Phase = GameKernelPhase.GameLost;
+                    state.Phase = GamePhase.GameLost;
                     return;
                 }
             }
 
-            state.EncounterIndexInDay++;
-            state.RemainingInDayDeck--;
-            if (state.RemainingInDayDeck > 0)
+            state.DayIdx++;
+            state.DeckLeft--;
+            if (state.DeckLeft > 0)
             {
-                state.CurrentEncounterId = state.DayDeck[state.RemainingInDayDeck - 1];
-                state.EloquenceUsedThisEncounter = 0;
+                state.EncId = state.DayDeck[state.DeckLeft - 1];
+                state.EloUsed = 0;
                 return;
             }
 
             if (state.CurrentDay >= rules.TotalDays)
             {
-                state.Phase = GameKernelPhase.GameWon;
+                state.Phase = GamePhase.GameWon;
             }
             else
             {
-                state.Phase = GameKernelPhase.AwaitingDayAdvance;
+                state.Phase = GamePhase.WaitDay;
             }
         }
 
@@ -170,12 +173,12 @@ namespace MaskGame.Simulation.Kernel
                 state.DayDeck[i] = pool[i];
             }
 
-            state.RemainingInDayDeck = deckSize;
-            state.CurrentEncounterId = state.DayDeck[state.RemainingInDayDeck - 1];
-            state.EloquenceUsedThisEncounter = 0;
+            state.DeckLeft = deckSize;
+            state.EncId = state.DayDeck[state.DeckLeft - 1];
+            state.EloUsed = 0;
         }
 
-        private static void ApplyHeal(ref GameState state, int amount, in GameKernelRules rules)
+        private static void ApplyHeal(ref GameState state, int amount, in GameRules rules)
         {
             if (amount <= 0)
                 return;
@@ -194,7 +197,7 @@ namespace MaskGame.Simulation.Kernel
         private static void Mix(ref ulong hash, uint value)
         {
             hash ^= value;
-            hash *= 1099511628211UL;
+            hash *= Fnv64Prime;
         }
     }
 }
