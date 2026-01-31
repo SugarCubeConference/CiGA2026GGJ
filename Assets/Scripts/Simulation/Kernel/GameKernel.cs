@@ -119,10 +119,6 @@ namespace MaskGame.Simulation.Kernel
             if (isCorrect)
             {
                 state.CorrectAnswers++;
-                if (state.Health < rules.MaxHealth)
-                {
-                    state.Health++;
-                }
             }
             else if (!isNeutral)
             {
