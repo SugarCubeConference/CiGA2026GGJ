@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
 namespace MaskGame.Managers
 {
@@ -75,6 +76,9 @@ namespace MaskGame.Managers
                     sfxSource.playOnAwake = false;
                     sfxSource.loop = false;
                 }
+                
+                // 监听场景加载事件
+                SceneManager.sceneLoaded += OnSceneLoaded;
             }
             else
             {
@@ -82,10 +86,31 @@ namespace MaskGame.Managers
             }
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+            }
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // 当加载到Main场景时，播放常规BGM
+            if (scene.name == "Main")
+            {
+                PlayNormalBGM();
+            }
+        }
+
         private void Start()
         {
-            // 游戏开始时播放常规BGM
-            PlayNormalBGM();
+            // 第一次启动时根据场景播放BGM
+            string sceneName = SceneManager.GetActiveScene().name;
+            if (sceneName == "Main")
+            {
+                PlayNormalBGM();
+            }
         }
 
         /// <summary>
