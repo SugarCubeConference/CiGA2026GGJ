@@ -167,7 +167,6 @@ namespace MaskGame.Managers
             {
                 bossMode = true;
                 isPaused = false; // 调试模式直接开始，不等待教程
-                UnityEngine.Debug.Log("调试模式：直接进入BOSS战！");
                 
                 // 触发BOSS模式开始事件
                 OnBossModeStart.Invoke();

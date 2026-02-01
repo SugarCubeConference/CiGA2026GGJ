@@ -182,22 +182,14 @@ namespace MaskGame.Managers
         /// </summary>
         public void PlayBossBGM()
         {
-            if (bgmSource == null)
+            if (bgmSource == null || bossBGM == null)
             {
-                UnityEngine.Debug.LogWarning("AudioManager: bgmSource未设置！请在Inspector中分配AudioSource组件。");
-                return;
-            }
-
-            if (bossBGM == null)
-            {
-                UnityEngine.Debug.LogWarning("AudioManager: bossBGM未设置！请在Inspector中分配BOSS音乐文件。");
                 return;
             }
 
             bgmSource.clip = bossBGM;
             bgmSource.loop = true;
             bgmSource.Play();
-            UnityEngine.Debug.Log("AudioManager: 开始播放BOSS BGM");
         }
 
         /// <summary>
@@ -205,22 +197,14 @@ namespace MaskGame.Managers
         /// </summary>
         public void PlayNormalBGM()
         {
-            if (bgmSource == null)
+            if (bgmSource == null || normalBGM == null)
             {
-                UnityEngine.Debug.LogWarning("AudioManager: bgmSource未设置！请在Inspector中分配AudioSource组件。");
-                return;
-            }
-
-            if (normalBGM == null)
-            {
-                UnityEngine.Debug.LogWarning("AudioManager: normalBGM未设置！请在Inspector中分配普通音乐文件。");
                 return;
             }
 
             bgmSource.clip = normalBGM;
             bgmSource.loop = true;
             bgmSource.Play();
-            UnityEngine.Debug.Log("AudioManager: 开始播放普通BGM");
         }
     }
 }

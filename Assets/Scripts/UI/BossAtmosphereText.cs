@@ -84,8 +84,16 @@ namespace MaskGame.UI
         /// </summary>
         public void StartGenerating()
         {
+            if (!enabled || !gameObject.activeInHierarchy)
+            {
+                enabled = true;
+                gameObject.SetActive(true);
+            }
+            
             if (isActive)
+            {
                 return;
+            }
 
             isActive = true;
             if (spawnCoroutine != null)
@@ -135,7 +143,9 @@ namespace MaskGame.UI
         private void SpawnRandomText()
         {
             if (atmosphereTexts == null || atmosphereTexts.Length == 0)
+            {
                 return;
+            }
 
             // 随机选择文本
             string text = atmosphereTexts[Random.Range(0, atmosphereTexts.Length)];

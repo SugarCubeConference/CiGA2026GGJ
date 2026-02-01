@@ -496,10 +496,12 @@ namespace MaskGame.UI
         /// </summary>
         public void StartBossAtmosphere()
         {
-            if (bossAtmosphereText != null)
+            if (bossAtmosphereText == null)
             {
-                bossAtmosphereText.StartGenerating();
+                return;
             }
+            
+            bossAtmosphereText.StartGenerating();
         }
 
         /// <summary>
