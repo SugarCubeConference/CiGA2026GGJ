@@ -146,7 +146,7 @@ namespace MaskGame.Managers
             currentEncounterIndex = 0;
             socialBattery = gameConfig.initialHealth; // 初始4条血，最大可达7条
             state = GameState.Resolve;
-            isPaused = false;
+            isPaused = true; // 默认暂停，等待教程关闭
             totalAnswers = 0;
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
