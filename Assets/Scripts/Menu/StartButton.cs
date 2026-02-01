@@ -17,6 +17,7 @@ public class StartButton : MonoBehaviour
             // 使用转场效果
             if (SceneTransition.Instance != null)
             {
+                MosaicTransitionManager.Instance.TransitionTo("Main");
                 SceneTransition.Instance.LoadSceneWithTransition(targetSceneName);
             }
             else

@@ -5,6 +5,7 @@ Shader "PixelZoom"
     {
         _MainTex("Texture",2D) = "white" {}
         _PixelSize("Pixel Size",Range(32,2048))=32
+        _Alpha ("Opacity", Range(0, 1)) = 1
     }
     SubShader
     {
@@ -45,8 +46,9 @@ Shader "PixelZoom"
         fixed4 frag (v2f i) : SV_Target
         {
           float2 uv = i.uv;
-          uv = floor(uv*_PixelSize)/_PixelSize;
-          fixed4 col = tex2D(_MainTex,uv);
+          uv.y = 1.0 - uv.y;
+          float2 pixelatedUV = floor(uv * _PixelSize) / _PixelSize;
+          fixed4 col = tex2D(_MainTex,pixelatedUV);
           return col;
         }
         ENDCG

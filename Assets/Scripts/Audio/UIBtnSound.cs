@@ -35,11 +35,9 @@ namespace MaskGame.UI
             // 判空：避免无音效/无音频源时报错
             if (clickClip != null && _audioSource != null)
             {
-                // PlayOneShot：播放短音效，不打断当前播放的其他音效（适合按钮、特效音）
                 _audioSource.PlayOneShot(clickClip, volume);
             }
         }
-
         // 销毁时移除事件监听，避免内存泄漏
         private void OnDestroy()
         {
