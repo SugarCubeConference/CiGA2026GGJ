@@ -42,7 +42,7 @@ namespace MaskGame.UI
         private RectTransform tooltipRect;
         private Canvas canvas;
         private bool isTextHovering = false;
-        private float currentTextScale = 1f;
+        private float currentFontSize;
 
         private void Awake()
         {
@@ -56,16 +56,16 @@ namespace MaskGame.UI
 
         private void Update()
         {
-            // 平滑更新文字缩放
-            if (tooltipText != null)
+            // 平滑更新文字字号
+            if (tooltipText != null && tooltipPanel != null && tooltipPanel.activeSelf)
             {
-                float targetScale = isTextHovering ? textHoverScale : 1f;
-                currentTextScale = Mathf.Lerp(
-                    currentTextScale,
-                    targetScale,
+                float targetFontSize = isTextHovering ? (fontSize * textHoverScale) : fontSize;
+                currentFontSize = Mathf.Lerp(
+                    currentFontSize,
+                    targetFontSize,
                     Time.deltaTime * textScaleSpeed
                 );
-                tooltipText.transform.localScale = Vector3.one * currentTextScale;
+                tooltipText.fontSize = currentFontSize;
             }
         }
 
@@ -89,21 +89,36 @@ namespace MaskGame.UI
             Image bgImage = tooltipPanel.AddComponent<Image>();
             bgImage.color = backgroundColor;
 
+            // 添加ContentSizeFitter使tooltip自适应大小
+            ContentSizeFitter sizeFitter = tooltipPanel.AddComponent<ContentSizeFitter>();
+            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // 添加LayoutGroup以支持padding
+            VerticalLayoutGroup layoutGroup = tooltipPanel.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.padding = new RectOffset(15, 15, 10, 10);
+            layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = true;
+            layoutGroup.childForceExpandWidth = false;
+            layoutGroup.childForceExpandHeight = false;
+
             // 创建文本对象
             GameObject textObj = new GameObject("Text");
             textObj.transform.SetParent(tooltipPanel.transform, false);
 
             RectTransform textRect = textObj.AddComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(10, 10);
-            textRect.offsetMax = new Vector2(-10, -10);
 
             tooltipText = textObj.AddComponent<TextMeshProUGUI>();
             tooltipText.fontSize = fontSize;
             tooltipText.color = textColor;
             tooltipText.alignment = TextAlignmentOptions.Center;
             tooltipText.enableWordWrapping = true;
+
+            // 添加LayoutElement以支持自适应大小
+            LayoutElement layoutElement = textObj.AddComponent<LayoutElement>();
+            layoutElement.preferredWidth = 280; // 最大宽度
+            layoutElement.flexibleWidth = 0;
 
             // 设置层级（确保显示在最前）
             tooltipPanel.transform.SetAsLastSibling();
@@ -143,6 +158,9 @@ namespace MaskGame.UI
                 if (tooltipText != null)
                 {
                     tooltipText.text = optionText;
+                    // 初始化字号
+                    currentFontSize = fontSize;
+                    tooltipText.fontSize = currentFontSize;
                 }
 
                 // 更新提示框位置（在鼠标上方）

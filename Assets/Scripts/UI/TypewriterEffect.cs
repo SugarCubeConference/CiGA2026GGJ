@@ -60,6 +60,15 @@ namespace MaskGame.UI
         [SerializeField]
         private float fadeOutDuration = 0.5f;
 
+        [Header("随机填充句子")]
+        [Tooltip("淡出后随机显示的句子列表")]
+        [SerializeField]
+        private string[] randomSentences = new string[]
+        {
+            "......",
+            "嗯？"
+        };
+
         private TextMeshProUGUI textComponent;
         private AudioSource audioSource;
         private Coroutine typewriterCoroutine;
@@ -355,6 +364,27 @@ namespace MaskGame.UI
             }
 
             canvasGroup.alpha = 0f;
+
+            // 淡出完成后，随机显示一句话
+            if (randomSentences != null && randomSentences.Length > 0)
+            {
+                string randomSentence = randomSentences[Random.Range(0, randomSentences.Length)];
+                textComponent.text = randomSentence;
+                textComponent.maxVisibleCharacters = int.MaxValue;
+
+                // 淡入显示随机句子
+                elapsed = 0f;
+                while (elapsed < fadeOutDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float alpha = Mathf.Lerp(0f, 1f, elapsed / fadeOutDuration);
+                    canvasGroup.alpha = alpha;
+                    yield return null;
+                }
+
+                canvasGroup.alpha = 1f;
+            }
+
             fadeOutCoroutine = null;
         }
 
