@@ -27,68 +27,68 @@ namespace MaskGame.UI
         private Material pixelateMaterial;
         private bool isTransitioning = false;
 
-        // 简单的像素化Shader代码
-        private const string PixelateShader =
-            @"
-Shader ""Hidden/Pixelate""
-{
-    Properties
-    {
-        _MainTex (""Texture"", 2D) = ""white"" {}
-        _PixelSize (""Pixel Size"", Float) = 1
-        _Color (""Color"", Color) = (0,0,0,1)
-    }
-    SubShader
-    {
-        Tags { ""Queue""=""Overlay"" ""RenderType""=""Transparent"" }
-        Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
-        Cull Off
+//         // 简单的像素化Shader代码
+//         private const string PixelateShader =
+//             @"
+// Shader ""Hidden/Pixelate""
+// {
+//     Properties
+//     {
+//         _MainTex (""Texture"", 2D) = ""white"" {}
+//         _PixelSize (""Pixel Size"", Float) = 1
+//         _Color (""Color"", Color) = (0,0,0,1)
+//     }
+//     SubShader
+//     {
+//         Tags { ""Queue""=""Overlay"" ""RenderType""=""Transparent"" }
+//         Blend SrcAlpha OneMinusSrcAlpha
+//         ZWrite Off
+//         Cull Off
 
-        Pass
-        {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #include ""UnityCG.cginc""
+//         Pass
+//         {
+//             CGPROGRAM
+//             #pragma vertex vert
+//             #pragma fragment frag
+//             #include ""UnityCG.cginc""
 
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
+//             struct appdata
+//             {
+//                 float4 vertex : POSITION;
+//                 float2 uv : TEXCOORD0;
+//             };
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
-            };
+//             struct v2f
+//             {
+//                 float2 uv : TEXCOORD0;
+//                 float4 vertex : SV_POSITION;
+//             };
 
-            sampler2D _MainTex;
-            float _PixelSize;
-            float4 _Color;
+//             sampler2D _MainTex;
+//             float _PixelSize;
+//             float4 _Color;
 
-            v2f vert (appdata v)
-            {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = v.uv;
-                return o;
-            }
+//             v2f vert (appdata v)
+//             {
+//                 v2f o;
+//                 o.vertex = UnityObjectToClipPos(v.vertex);
+//                 o.uv = v.uv;
+//                 return o;
+//             }
 
-            fixed4 frag (v2f i) : SV_Target
-            {
-                // 马赛克像素化效果
-                float2 pixelUV = floor(i.uv * _ScreenParams.xy / _PixelSize) * _PixelSize / _ScreenParams.xy;
+//             fixed4 frag (v2f i) : SV_Target
+//             {
+//                 // 马赛克像素化效果
+//                 float2 pixelUV = floor(i.uv * _ScreenParams.xy / _PixelSize) * _PixelSize / _ScreenParams.xy;
                 
-                // 根据像素大小混合颜色和纹理
-                float alpha = _PixelSize / 50.0;
-                return lerp(tex2D(_MainTex, pixelUV), _Color, alpha);
-            }
-            ENDCG
-        }
-    }
-}";
+//                 // 根据像素大小混合颜色和纹理
+//                 float alpha = _PixelSize / 50.0;
+//                 return lerp(tex2D(_MainTex, pixelUV), _Color, alpha);
+//             }
+//             ENDCG
+//         }
+//     }
+// }";
 
         private void Awake()
         {
