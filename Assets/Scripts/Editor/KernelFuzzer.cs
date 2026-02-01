@@ -2,9 +2,9 @@ using System;
 using System.Text;
 using MaskGame.Data;
 using MaskGame.Simulation;
-using Kernel = MaskGame.Simulation.Kernel;
 using UnityEditor;
 using UnityEngine;
+using Kernel = MaskGame.Simulation.Kernel;
 
 namespace MaskGame.Editor
 {
@@ -167,10 +167,13 @@ namespace MaskGame.Editor
 
         private static void Run(Settings settings)
         {
-            if (!BuildInput(out Kernel.GameRules rules, out Kernel.EncounterDefinition[] encounters))
+            if (
+                !BuildInput(out Kernel.GameRules rules, out Kernel.EncounterDefinition[] encounters)
+            )
                 return;
 
-            uint root = settings.SeedRoot != 0 ? settings.SeedRoot : unchecked((uint)DateTime.UtcNow.Ticks);
+            uint root =
+                settings.SeedRoot != 0 ? settings.SeedRoot : unchecked((uint)DateTime.UtcNow.Ticks);
             DeterministicRng seedRng = DeterministicRng.Create(root, FuzzStream);
             System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
             bool showProgress = !Application.isBatchMode;
@@ -220,7 +223,9 @@ namespace MaskGame.Editor
 
         private static void RunSingle(uint seed)
         {
-            if (!BuildInput(out Kernel.GameRules rules, out Kernel.EncounterDefinition[] encounters))
+            if (
+                !BuildInput(out Kernel.GameRules rules, out Kernel.EncounterDefinition[] encounters)
+            )
                 return;
 
             Settings settings = new Settings(
@@ -250,7 +255,8 @@ namespace MaskGame.Editor
         )
         {
             GameConfig config;
-            MaskGame.Managers.GameManager gameManager = UnityEngine.Object.FindObjectOfType<MaskGame.Managers.GameManager>();
+            MaskGame.Managers.GameManager gameManager =
+                UnityEngine.Object.FindObjectOfType<MaskGame.Managers.GameManager>();
             if (gameManager != null)
             {
                 config = gameManager.Config;
@@ -294,7 +300,10 @@ namespace MaskGame.Editor
                     }
                 }
 
-                encounters[i] = new Kernel.EncounterDefinition((int)encounter.correctMask, neutralBits);
+                encounters[i] = new Kernel.EncounterDefinition(
+                    (int)encounter.correctMask,
+                    neutralBits
+                );
             }
 
             return true;
@@ -317,7 +326,9 @@ namespace MaskGame.Editor
             string b = items.Length > 1 ? items[1].name : "-";
             string c = items.Length > 2 ? items[2].name : "-";
 
-            Debug.Log($"Encounter order ({tag}): count={items.Length} hash=0x{hash:X8} top3={a}|{b}|{c}");
+            Debug.Log(
+                $"Encounter order ({tag}): count={items.Length} hash=0x{hash:X8} top3={a}|{b}|{c}"
+            );
         }
 
         private static bool TrySimulate(
@@ -349,7 +360,11 @@ namespace MaskGame.Editor
 
             for (int step = 0; step < settings.MaxStep; step++)
             {
-                Kernel.SimulationCommand command = GenerateCommand(ref driverRng, in state, in settings);
+                Kernel.SimulationCommand command = GenerateCommand(
+                    ref driverRng,
+                    in state,
+                    in settings
+                );
                 Kernel.GamePhase phase0 = state.Phase;
                 bool invalid = settings.IncludeInvalid && IsInvalid(in command, phase0);
                 ulong hash0 = invalid ? Kernel.GameKernel.HashState(in state) : 0;
@@ -375,8 +390,7 @@ namespace MaskGame.Editor
                     return false;
                 }
 
-                if (command.Type == Kernel.CmdType.Heal
-                    && state.EncounterRng.State != rngPrev)
+                if (command.Type == Kernel.CmdType.Heal && state.EncounterRng.State != rngPrev)
                 {
                     failure = new Failure(
                         seed,
@@ -402,8 +416,10 @@ namespace MaskGame.Editor
                     return false;
                 }
 
-                if (state.Phase == Kernel.GamePhase.GameWon
-                    || state.Phase == Kernel.GamePhase.GameLost)
+                if (
+                    state.Phase == Kernel.GamePhase.GameWon
+                    || state.Phase == Kernel.GamePhase.GameLost
+                )
                 {
                     break;
                 }
@@ -412,7 +428,16 @@ namespace MaskGame.Editor
             if (settings.VerifyReplay)
             {
                 ulong finalHash = Kernel.GameKernel.HashState(in state);
-                if (!TryReplay(seed, in rules, encounters, in settings, finalHash, out Failure replayFailure))
+                if (
+                    !TryReplay(
+                        seed,
+                        in rules,
+                        encounters,
+                        in settings,
+                        finalHash,
+                        out Failure replayFailure
+                    )
+                )
                 {
                     failure = replayFailure;
                     return false;
@@ -432,66 +457,31 @@ namespace MaskGame.Editor
         {
             if (!TryDeck(seed, in rules, encounters, out string message))
             {
-                failure = new Failure(
-                    seed,
-                    -1,
-                    default,
-                    0,
-                    message,
-                    string.Empty
-                );
+                failure = new Failure(seed, -1, default, 0, message, string.Empty);
                 return false;
             }
 
             if (!TryWin(seed, encounters, out message))
             {
-                failure = new Failure(
-                    seed,
-                    -1,
-                    default,
-                    0,
-                    message,
-                    string.Empty
-                );
+                failure = new Failure(seed, -1, default, 0, message, string.Empty);
                 return false;
             }
 
             if (!TryElo(seed, in rules, encounters, out message))
             {
-                failure = new Failure(
-                    seed,
-                    -1,
-                    default,
-                    0,
-                    message,
-                    string.Empty
-                );
+                failure = new Failure(seed, -1, default, 0, message, string.Empty);
                 return false;
             }
 
             if (!TryDays(seed, in rules, encounters, out message))
             {
-                failure = new Failure(
-                    seed,
-                    -1,
-                    default,
-                    0,
-                    message,
-                    string.Empty
-                );
+                failure = new Failure(seed, -1, default, 0, message, string.Empty);
                 return false;
             }
 
             if (!TryDie(seed, encounters, out message))
             {
-                failure = new Failure(
-                    seed,
-                    -1,
-                    default,
-                    0,
-                    message,
-                    string.Empty
-                );
+                failure = new Failure(seed, -1, default, 0, message, string.Empty);
                 return false;
             }
 
@@ -499,7 +489,11 @@ namespace MaskGame.Editor
             return true;
         }
 
-        private static bool TryBias(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryBias(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             if (encounters.Length <= 0)
             {
@@ -518,7 +512,11 @@ namespace MaskGame.Editor
             return true;
         }
 
-        private static bool TryInvalid(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryInvalid(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             Kernel.GameRules rules = new Kernel.GameRules(
                 totalDays: 2,
@@ -530,7 +528,12 @@ namespace MaskGame.Editor
 
             Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, encounters.Length);
             ulong hash0 = Kernel.GameKernel.HashState(in state);
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.AdvanceDay(),
+                in rules,
+                encounters
+            );
             if (Kernel.GameKernel.HashState(in state) != hash0)
             {
                 message = "Invalid cmd mutated state: AdvanceDay in WaitAns.";
@@ -538,7 +541,12 @@ namespace MaskGame.Editor
             }
 
             int mask = encounters[state.EncId].CorrectMask;
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.SelectMask(mask),
+                in rules,
+                encounters
+            );
             if (state.Phase != Kernel.GamePhase.WaitDay)
             {
                 message = $"Invalid cmd precondition failed: expected WaitDay got={state.Phase}";
@@ -546,14 +554,24 @@ namespace MaskGame.Editor
             }
 
             ulong hash1 = Kernel.GameKernel.HashState(in state);
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.Timeout(), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.Timeout(),
+                in rules,
+                encounters
+            );
             if (Kernel.GameKernel.HashState(in state) != hash1)
             {
                 message = "Invalid cmd mutated state: Timeout in WaitDay.";
                 return false;
             }
 
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(0), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.SelectMask(0),
+                in rules,
+                encounters
+            );
             if (Kernel.GameKernel.HashState(in state) != hash1)
             {
                 message = "Invalid cmd mutated state: SelectMask in WaitDay.";
@@ -564,7 +582,11 @@ namespace MaskGame.Editor
             return true;
         }
 
-        private static bool TryAfk(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryAfk(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             Kernel.GameRules rules = new Kernel.GameRules(
                 totalDays: 50,
@@ -582,10 +604,20 @@ namespace MaskGame.Editor
                 switch (state.Phase)
                 {
                     case Kernel.GamePhase.WaitAns:
-                        Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.Timeout(), in rules, encounters);
+                        Kernel.GameKernel.Apply(
+                            ref state,
+                            Kernel.SimulationCommand.Timeout(),
+                            in rules,
+                            encounters
+                        );
                         break;
                     case Kernel.GamePhase.WaitDay:
-                        Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
+                        Kernel.GameKernel.Apply(
+                            ref state,
+                            Kernel.SimulationCommand.AdvanceDay(),
+                            in rules,
+                            encounters
+                        );
                         break;
                     default:
                         message = string.Empty;
@@ -600,7 +632,11 @@ namespace MaskGame.Editor
             return true;
         }
 
-        private static bool TryHeal(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryHeal(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             Kernel.GameRules rules = new Kernel.GameRules(
                 totalDays: 2,
@@ -612,7 +648,12 @@ namespace MaskGame.Editor
 
             Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, encounters.Length);
             int mask = encounters[state.EncId].CorrectMask;
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.SelectMask(mask),
+                in rules,
+                encounters
+            );
             if (state.Phase != Kernel.GamePhase.WaitDay)
             {
                 message = $"Heal precondition failed: expected WaitDay got={state.Phase}";
@@ -621,7 +662,12 @@ namespace MaskGame.Editor
 
             for (int i = 0; i < BiasLoops; i++)
             {
-                Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.Heal(1), in rules, encounters);
+                Kernel.GameKernel.Apply(
+                    ref state,
+                    Kernel.SimulationCommand.Heal(1),
+                    in rules,
+                    encounters
+                );
                 if (!CheckInv(in state, in rules, encounters, out message))
                     return false;
             }
@@ -643,13 +689,18 @@ namespace MaskGame.Editor
                 case Kernel.GamePhase.WaitAns:
                     return command.Type == Kernel.CmdType.AdvanceDay;
                 case Kernel.GamePhase.WaitDay:
-                    return command.Type == Kernel.CmdType.SelectMask || command.Type == Kernel.CmdType.Timeout;
+                    return command.Type == Kernel.CmdType.SelectMask
+                        || command.Type == Kernel.CmdType.Timeout;
                 default:
                     return false;
             }
         }
 
-        private static bool TryWin(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryWin(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             Kernel.GameRules rules = new Kernel.GameRules(
                 totalDays: 1,
@@ -661,7 +712,12 @@ namespace MaskGame.Editor
 
             Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, encounters.Length);
             int mask = encounters[state.EncId].CorrectMask;
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.SelectMask(mask),
+                in rules,
+                encounters
+            );
 
             if (state.Phase != Kernel.GamePhase.GameWon)
             {
@@ -708,11 +764,26 @@ namespace MaskGame.Editor
 
             for (int i = 0; i < 3; i++)
             {
-                Kernel.GameKernel.Apply(ref a, Kernel.SimulationCommand.Heal(1), in rules, encounters);
+                Kernel.GameKernel.Apply(
+                    ref a,
+                    Kernel.SimulationCommand.Heal(1),
+                    in rules,
+                    encounters
+                );
             }
 
-            Kernel.GameKernel.Apply(ref a, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
-            Kernel.GameKernel.Apply(ref b, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
+            Kernel.GameKernel.Apply(
+                ref a,
+                Kernel.SimulationCommand.AdvanceDay(),
+                in rules,
+                encounters
+            );
+            Kernel.GameKernel.Apply(
+                ref b,
+                Kernel.SimulationCommand.AdvanceDay(),
+                in rules,
+                encounters
+            );
 
             if (a.EncounterRng.State != b.EncounterRng.State)
             {
@@ -758,7 +829,9 @@ namespace MaskGame.Editor
 
             int wrongMask = PickWrong(encounters[enc0]);
             Kernel.SimulationCommand cmd =
-                wrongMask >= 0 ? Kernel.SimulationCommand.SelectMask(wrongMask) : Kernel.SimulationCommand.Timeout();
+                wrongMask >= 0
+                    ? Kernel.SimulationCommand.SelectMask(wrongMask)
+                    : Kernel.SimulationCommand.Timeout();
 
             Kernel.GameKernel.Apply(ref state, in cmd, in rules, encounters);
             if (state.Health != hp0)
@@ -782,7 +855,8 @@ namespace MaskGame.Editor
             Kernel.GameKernel.Apply(ref state, in cmd, in rules, encounters);
             if (state.Health != hp0 - rules.BatteryPenalty)
             {
-                message = $"Elo failed: second wrong did not apply penalty exp={hp0 - rules.BatteryPenalty} got={state.Health}";
+                message =
+                    $"Elo failed: second wrong did not apply penalty exp={hp0 - rules.BatteryPenalty} got={state.Health}";
                 return false;
             }
 
@@ -813,7 +887,12 @@ namespace MaskGame.Editor
                 for (int i = 0; i < guard && state.Phase == Kernel.GamePhase.WaitAns; i++)
                 {
                     int mask = encounters[state.EncId].CorrectMask;
-                    Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+                    Kernel.GameKernel.Apply(
+                        ref state,
+                        Kernel.SimulationCommand.SelectMask(mask),
+                        in rules,
+                        encounters
+                    );
                 }
 
                 if (state.Phase == Kernel.GamePhase.WaitAns)
@@ -834,7 +913,12 @@ namespace MaskGame.Editor
                     return false;
                 }
 
-                Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
+                Kernel.GameKernel.Apply(
+                    ref state,
+                    Kernel.SimulationCommand.AdvanceDay(),
+                    in rules,
+                    encounters
+                );
                 if (state.Phase == Kernel.GamePhase.GameWon)
                 {
                     message = string.Empty;
@@ -852,7 +936,11 @@ namespace MaskGame.Editor
             return true;
         }
 
-        private static bool TryDie(uint seed, Kernel.EncounterDefinition[] encounters, out string message)
+        private static bool TryDie(
+            uint seed,
+            Kernel.EncounterDefinition[] encounters,
+            out string message
+        )
         {
             Kernel.GameRules dieRules = new Kernel.GameRules(
                 totalDays: 999,
@@ -862,10 +950,19 @@ namespace MaskGame.Editor
                 batteryPenalty: 1
             );
 
-            Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in dieRules, encounters.Length);
+            Kernel.GameState state = Kernel.GameKernel.NewGame(
+                seed,
+                in dieRules,
+                encounters.Length
+            );
             state.HasElo = 0;
 
-            Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.Timeout(), in dieRules, encounters);
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.Timeout(),
+                in dieRules,
+                encounters
+            );
 
             if (state.Phase != Kernel.GamePhase.GameLost)
             {
@@ -895,7 +992,12 @@ namespace MaskGame.Editor
             {
                 int encId = state.EncId;
                 int mask = encounters[encId].CorrectMask;
-                Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+                Kernel.GameKernel.Apply(
+                    ref state,
+                    Kernel.SimulationCommand.SelectMask(mask),
+                    in rules,
+                    encounters
+                );
             }
 
             if (state.Phase != Kernel.GamePhase.WaitDay)
@@ -939,11 +1041,17 @@ namespace MaskGame.Editor
 
             for (int step = 0; step < settings.MaxStep; step++)
             {
-                Kernel.SimulationCommand command = GenerateCommand(ref driverRng, in state, in settings);
+                Kernel.SimulationCommand command = GenerateCommand(
+                    ref driverRng,
+                    in state,
+                    in settings
+                );
                 Kernel.GameKernel.Apply(ref state, in command, in rules, encounters);
 
-                if (state.Phase == Kernel.GamePhase.GameWon
-                    || state.Phase == Kernel.GamePhase.GameLost)
+                if (
+                    state.Phase == Kernel.GamePhase.GameWon
+                    || state.Phase == Kernel.GamePhase.GameLost
+                )
                 {
                     break;
                 }
@@ -999,7 +1107,10 @@ namespace MaskGame.Editor
             }
         }
 
-        private static Kernel.SimulationCommand GenInvalid(ref DeterministicRng rng, in Kernel.GameState state)
+        private static Kernel.SimulationCommand GenInvalid(
+            ref DeterministicRng rng,
+            in Kernel.GameState state
+        )
         {
             switch (state.Phase)
             {
@@ -1054,7 +1165,8 @@ namespace MaskGame.Editor
 
             if (state.DeckLeft < 0 || state.DeckLeft > deckSize)
             {
-                message = $"Deck remaining out of range: remaining={state.DeckLeft} deckSize={deckSize}";
+                message =
+                    $"Deck remaining out of range: remaining={state.DeckLeft} deckSize={deckSize}";
                 return false;
             }
 
@@ -1081,7 +1193,8 @@ namespace MaskGame.Editor
             {
                 if (state.CurrentDay < rules.TotalDays && state.DeckSize >= rules.DayEnc)
                 {
-                    message = $"GameWon before reaching totalDays: day={state.CurrentDay} totalDays={rules.TotalDays} deckSize={state.DeckSize} dayEnc={rules.DayEnc}";
+                    message =
+                        $"GameWon before reaching totalDays: day={state.CurrentDay} totalDays={rules.TotalDays} deckSize={state.DeckSize} dayEnc={rules.DayEnc}";
                     return false;
                 }
 
@@ -1107,8 +1220,7 @@ namespace MaskGame.Editor
                 int expEnc = state.DayDeck[state.DeckLeft - 1];
                 if (state.EncId != expEnc)
                 {
-                    message =
-                        $"CurrentEncounterId mismatch: id={state.EncId} expected={expEnc}";
+                    message = $"CurrentEncounterId mismatch: id={state.EncId} expected={expEnc}";
                     return false;
                 }
             }
@@ -1116,8 +1228,7 @@ namespace MaskGame.Editor
             {
                 if (state.DeckLeft != 0)
                 {
-                    message =
-                        $"WaitDay but DeckLeft != 0: remaining={state.DeckLeft}";
+                    message = $"WaitDay but DeckLeft != 0: remaining={state.DeckLeft}";
                     return false;
                 }
             }
@@ -1128,14 +1239,17 @@ namespace MaskGame.Editor
 
         private static string FormatFailure(in Failure failure)
         {
-            return
-                $"Kernel fuzz failure: seed={failure.Seed} step={failure.Step} " +
-                $"cmd={failure.Command.Type}({failure.Command.Int0}) " +
-                $"hash=0x{failure.StateHash:X16} msg={failure.Message}\n" +
-                $"trace(last)={failure.Trace}";
+            return $"Kernel fuzz failure: seed={failure.Seed} step={failure.Step} "
+                + $"cmd={failure.Command.Type}({failure.Command.Int0}) "
+                + $"hash=0x{failure.StateHash:X16} msg={failure.Message}\n"
+                + $"trace(last)={failure.Trace}";
         }
 
-        private static string FormatTrace(Kernel.SimulationCommand[] ring, int writeIndex, int count)
+        private static string FormatTrace(
+            Kernel.SimulationCommand[] ring,
+            int writeIndex,
+            int count
+        )
         {
             if (count <= 0)
                 return string.Empty;

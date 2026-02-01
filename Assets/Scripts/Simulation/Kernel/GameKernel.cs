@@ -3,10 +3,10 @@ using MaskGame.Simulation;
 
 namespace MaskGame.Simulation.Kernel
 {
-	public static class GameKernel
-	{
-		private const ulong Fnv1a64Offset = 14695981039346656037UL; // FNV-1a 64-bit
-		private const ulong Fnv1a64Prime = 1099511628211UL; // FNV-1a 64-bit
+    public static class GameKernel
+    {
+        private const ulong Fnv1a64Offset = 14695981039346656037UL; // FNV-1a 64-bit
+        private const ulong Fnv1a64Prime = 1099511628211UL; // FNV-1a 64-bit
 
         public static GameState NewGame(uint seed, in GameRules rules, int encounterCount)
         {
@@ -61,9 +61,9 @@ namespace MaskGame.Simulation.Kernel
             }
         }
 
-		public static ulong HashState(in GameState state)
-		{
-			ulong hash = Fnv1a64Offset;
+        public static ulong HashState(in GameState state)
+        {
+            ulong hash = Fnv1a64Offset;
             Mix(ref hash, state.Seed);
             Mix(ref hash, (uint)state.CurrentDay);
             Mix(ref hash, (uint)state.DayIdx);
@@ -219,11 +219,11 @@ namespace MaskGame.Simulation.Kernel
             }
         }
 
-		private static void Mix(ref ulong hash, uint value)
-		{
-			hash ^= value;
-			hash *= Fnv1a64Prime;
-		}
+        private static void Mix(ref ulong hash, uint value)
+        {
+            hash ^= value;
+            hash *= Fnv1a64Prime;
+        }
 
         private static bool IsUsed(in GameState state, int id)
         {

@@ -146,7 +146,6 @@ namespace MaskGame.Managers
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
             usedEncounters.Clear(); // 清空已使用encounters
-
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             InitShadow();
 #endif

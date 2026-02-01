@@ -21,8 +21,8 @@ namespace MaskGame.Managers
         private Kernel.GameState shadowState;
 
         private static bool encLog;
-        private const uint Fnv32Offset = 2166136261u;
-        private const uint Fnv32Prime = 16777619u;
+        private const uint Fnv32Offset = 2166136261u; // FNV-1a 32-bit
+        private const uint Fnv32Prime = 16777619u; // FNV-1a 32-bit
 
         private static void LogEnc(EncounterData[] items, string tag)
         {
@@ -47,7 +47,9 @@ namespace MaskGame.Managers
             string a = items.Length > 0 && items[0] != null ? items[0].name : "-";
             string b = items.Length > 1 && items[1] != null ? items[1].name : "-";
             string c = items.Length > 2 && items[2] != null ? items[2].name : "-";
-            Debug.Log($"Encounter order ({tag}): count={items.Length} hash=0x{hash:X8} top3={a}|{b}|{c}");
+            Debug.Log(
+                $"Encounter order ({tag}): count={items.Length} hash=0x{hash:X8} top3={a}|{b}|{c}"
+            );
         }
 
         private void InitShadow()
@@ -94,11 +96,7 @@ namespace MaskGame.Managers
                 gameConfig.batteryPenalty
             );
 
-            shadowState = Kernel.GameKernel.NewGame(
-                gameSeed,
-                shadowRules,
-                count
-            );
+            shadowState = Kernel.GameKernel.NewGame(gameSeed, shadowRules, count);
             SyncElo();
 
             shadowInit = true;
@@ -170,9 +168,7 @@ namespace MaskGame.Managers
                     break;
                 case GameState.GameEnd:
                     expectedPhase =
-                        socialBattery <= 0
-                            ? Kernel.GamePhase.GameLost
-                            : Kernel.GamePhase.GameWon;
+                        socialBattery <= 0 ? Kernel.GamePhase.GameLost : Kernel.GamePhase.GameWon;
                     break;
                 default:
                     return;
@@ -194,9 +190,11 @@ namespace MaskGame.Managers
 
             if (!mismatch && expectedPhase == Kernel.GamePhase.WaitAns)
             {
-                if (currentEncounter == null
+                if (
+                    currentEncounter == null
                     || !shadowIds.TryGetValue(currentEncounter, out int encId)
-                    || encId != shadowState.EncId)
+                    || encId != shadowState.EncId
+                )
                 {
                     mismatch = true;
                 }
@@ -207,16 +205,15 @@ namespace MaskGame.Managers
 
             ulong hash = Kernel.GameKernel.HashState(in shadowState);
             Debug.LogError(
-                $"Kernel shadow mismatch ({context}) seed={gameSeed} hash=0x{hash:X16} " +
-                $"gmDay={currentDay} kDay={shadowState.CurrentDay} " +
-                $"gmIdx={currentEncounterIndex} kIdx={shadowState.DayIdx} " +
-                $"gmHp={socialBattery} kHp={shadowState.Health} " +
-                $"gmTotal={totalAnswers} kTotal={shadowState.TotalAnswers} " +
-                $"gmCorrect={correctAnswers} kCorrect={shadowState.CorrectAnswers} " +
-                $"gmState={state} kPhase={shadowState.Phase}"
+                $"Kernel shadow mismatch ({context}) seed={gameSeed} hash=0x{hash:X16} "
+                    + $"gmDay={currentDay} kDay={shadowState.CurrentDay} "
+                    + $"gmIdx={currentEncounterIndex} kIdx={shadowState.DayIdx} "
+                    + $"gmHp={socialBattery} kHp={shadowState.Health} "
+                    + $"gmTotal={totalAnswers} kTotal={shadowState.TotalAnswers} "
+                    + $"gmCorrect={correctAnswers} kCorrect={shadowState.CorrectAnswers} "
+                    + $"gmState={state} kPhase={shadowState.Phase}"
             );
         }
     }
 }
 #endif
-
