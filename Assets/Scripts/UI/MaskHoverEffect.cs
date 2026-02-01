@@ -11,12 +11,14 @@ namespace MaskGame.UI
         [Header("缩放设置")]
         [SerializeField]
         private float hoverScale = 1.15f; // 悬停时的缩放比例
+
         [SerializeField]
         private float scaleSpeed = 8f; // 缩放过渡速度
 
         [Header("漂浮设置")]
         [SerializeField]
         private float floatAmplitude = 10f; // 漂浮幅度（像素）
+
         [SerializeField]
         private float floatSpeed = 2f; // 漂浮速度
 

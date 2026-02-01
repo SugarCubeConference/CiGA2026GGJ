@@ -161,7 +161,7 @@ namespace MaskGame.Managers
                 return dayPool;
 
             IReadOnlyList<EncounterData> src = null;
-            
+
             // 优先使用encounterSet
             if (encounterSet != null && encounterSet.Items.Count > 0)
             {
@@ -175,7 +175,10 @@ namespace MaskGame.Managers
                 System.Array.Sort(
                     loaded,
                     (a, b) =>
-                        string.CompareOrdinal(a != null ? a.name : string.Empty, b != null ? b.name : string.Empty)
+                        string.CompareOrdinal(
+                            a != null ? a.name : string.Empty,
+                            b != null ? b.name : string.Empty
+                        )
                 );
 
                 encounterPool.Clear(); // 清空Inspector中可能配置的空数据
@@ -272,10 +275,10 @@ namespace MaskGame.Managers
             if (shuffledEncounters.Count == 0)
             {
                 UnityEngine.Debug.LogError(
-                    $"GameManager: 没有可用的对话！请检查：\n" +
-                    $"1. Resources/Encounters/ 文件夹是否存在\n" +
-                    $"2. 文件夹中是否有EncounterData资源\n" +
-                    $"3. 或者在Inspector中配置encounterSet字段"
+                    $"GameManager: 没有可用的对话！请检查：\n"
+                        + $"1. Resources/Encounters/ 文件夹是否存在\n"
+                        + $"2. 文件夹中是否有EncounterData资源\n"
+                        + $"3. 或者在Inspector中配置encounterSet字段"
                 );
                 return;
             }
@@ -294,7 +297,8 @@ namespace MaskGame.Managers
 
             // 获取决策时间（应用电池技能加成）
             float baseTime = gameConfig.GetDecisionTime(currentDay);
-            float timeBonus = SkillManager.Instance != null ? SkillManager.Instance.GetTimeBonus() : 1f;
+            float timeBonus =
+                SkillManager.Instance != null ? SkillManager.Instance.GetTimeBonus() : 1f;
             remainingTime = baseTime * timeBonus;
 
             // 重置遭遇相关的技能状态
@@ -386,7 +390,10 @@ namespace MaskGame.Managers
                 // 妙语连珠技能 - 选错时获得重试机会
                 if (SkillManager.Instance != null && SkillManager.Instance.TryUseEloquence())
                 {
-                    OnAnswerResult.Invoke(AnswerOutcome.Wrong, feedbackText + "\n妙语连珠生效！再试一次");
+                    OnAnswerResult.Invoke(
+                        AnswerOutcome.Wrong,
+                        feedbackText + "\n妙语连珠生效！再试一次"
+                    );
                     state = GameState.Await; // 重新进入等待状态
                     return; // 不扣血，不进入下一对话
                 }

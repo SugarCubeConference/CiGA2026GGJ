@@ -1,8 +1,8 @@
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using MaskGame.Data;
 using MaskGame.Managers;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace MaskGame.Setup
 {
@@ -15,7 +15,7 @@ namespace MaskGame.Setup
         {
             SetupSkillManager();
             SetupAwardPanelUI();
-            
+
             // 配置完成后销毁自己
             Destroy(this);
         }
@@ -33,18 +33,22 @@ namespace MaskGame.Setup
             var skillList = new System.Collections.Generic.List<SkillData>(skillArray);
 
             // 使用反射设置私有字段
-            var field = typeof(SkillManager).GetField("allSkills", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+            var field = typeof(SkillManager).GetField(
+                "allSkills",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
+
             if (field != null)
             {
                 field.SetValue(skillManager, skillList);
             }
 
             // 重新初始化skillDataMap
-            var initMethod = typeof(SkillManager).GetMethod("InitializeSkillDataMap",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
+            var initMethod = typeof(SkillManager).GetMethod(
+                "InitializeSkillDataMap",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
+
             if (initMethod != null)
             {
                 initMethod.Invoke(skillManager, null);
@@ -84,14 +88,14 @@ namespace MaskGame.Setup
                 if (button != null)
                 {
                     skillButtons.Add(button);
-                    
+
                     // 获取按钮自身的Image组件作为图标
                     var buttonImage = child.GetComponent<Image>();
                     if (buttonImage != null)
                     {
                         skillIcons.Add(buttonImage);
                     }
-                    
+
                     // 查找这个按钮下的文本组件
                     var texts = child.GetComponentsInChildren<TextMeshProUGUI>(true);
                     foreach (var text in texts)
@@ -119,44 +123,62 @@ namespace MaskGame.Setup
 
             // 使用反射设置私有字段
             var type = typeof(MaskGame.UI.AwardPanelUI);
-            
+
             // 设置panelRoot
-            var panelRootField = type.GetField("panelRoot", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var panelRootField = type.GetField(
+                "panelRoot",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (panelRootField != null)
             {
                 panelRootField.SetValue(awardPanelUI, awardPanel);
             }
 
             // 设置按钮数组
-            var buttonsField = type.GetField("skillButtons", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var buttonsField = type.GetField(
+                "skillButtons",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (buttonsField != null)
             {
                 buttonsField.SetValue(awardPanelUI, skillButtons.ToArray());
             }
 
             // 设置名称文本数组
-            var nameTextsField = type.GetField("skillNameTexts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var nameTextsField = type.GetField(
+                "skillNameTexts",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (nameTextsField != null)
             {
                 nameTextsField.SetValue(awardPanelUI, nameTexts.ToArray());
             }
 
             // 设置描述文本数组
-            var descTextsField = type.GetField("skillDescTexts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var descTextsField = type.GetField(
+                "skillDescTexts",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (descTextsField != null)
             {
                 descTextsField.SetValue(awardPanelUI, descTexts.ToArray());
             }
 
             // 设置技能图标数组
-            var skillIconsField = type.GetField("skillIcons", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var skillIconsField = type.GetField(
+                "skillIcons",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (skillIconsField != null)
             {
                 skillIconsField.SetValue(awardPanelUI, skillIcons.ToArray());
             }
 
             // 设置已获得技能文本
-            var acquiredTextField = type.GetField("acquiredSkillsText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var acquiredTextField = type.GetField(
+                "acquiredSkillsText",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             if (acquiredTextField != null)
             {
                 acquiredTextField.SetValue(awardPanelUI, acquiredSkillsText);

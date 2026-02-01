@@ -17,7 +17,8 @@ namespace MaskGame.Setup
         private void ConnectSlider()
         {
             var slider = GetComponent<Slider>();
-            if (slider == null) return;
+            if (slider == null)
+                return;
 
             // 查找Fill和Handle
             var fillObj = transform.Find("Fill Area/Fill");
@@ -29,8 +30,11 @@ namespace MaskGame.Setup
                 var fillRect = fillObj.GetComponent<RectTransform>();
                 if (fillRect != null)
                 {
-                    var fillField = typeof(Slider).GetField("m_FillRect",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var fillField = typeof(Slider).GetField(
+                        "m_FillRect",
+                        System.Reflection.BindingFlags.NonPublic
+                            | System.Reflection.BindingFlags.Instance
+                    );
                     fillField?.SetValue(slider, fillRect);
 
                     // 配置Fill Image为Filled类型
@@ -51,8 +55,11 @@ namespace MaskGame.Setup
                 var handleRect = handleObj.GetComponent<RectTransform>();
                 if (handleRect != null)
                 {
-                    var handleField = typeof(Slider).GetField("m_HandleRect",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var handleField = typeof(Slider).GetField(
+                        "m_HandleRect",
+                        System.Reflection.BindingFlags.NonPublic
+                            | System.Reflection.BindingFlags.Instance
+                    );
                     handleField?.SetValue(slider, handleRect);
 
                     // 设置targetGraphic为Handle的Image

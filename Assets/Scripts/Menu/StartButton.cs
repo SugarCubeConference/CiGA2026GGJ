@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using MaskGame.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using MaskGame.UI;
 
 public class StartButton : MonoBehaviour
 {

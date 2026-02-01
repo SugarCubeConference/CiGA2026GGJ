@@ -1,5 +1,5 @@
-using UnityEngine;
 using MaskGame.Managers;
+using UnityEngine;
 
 namespace MaskGame.UI
 {
@@ -168,7 +168,7 @@ namespace MaskGame.UI
         {
             // 过滤掉空引用
             var validClips = System.Array.FindAll(hurtSounds, clip => clip != null);
-            
+
             if (validClips.Length == 0)
                 return null;
 
@@ -182,17 +182,17 @@ namespace MaskGame.UI
 
             // 获取最大生命值（初始值）
             int maxHealth = GameManager.Instance != null ? 4 : 4; // 默认4条血
-            
+
             // 生命值比例 (0-1)
             float healthRatio = Mathf.Clamp01((float)currentHealth / maxHealth);
-            
+
             // 生命值越低，音量越大
             float volumeMultiplier = Mathf.Lerp(lowHealthVolumeMultiplier, 1f, healthRatio);
-            
+
             return volume * volumeMultiplier;
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         private void OnValidate()
         {
             // 编辑器验证
@@ -202,6 +202,6 @@ namespace MaskGame.UI
             if (lowHealthVolumeMultiplier < 1f)
                 lowHealthVolumeMultiplier = 1f;
         }
-        #endif
+#endif
     }
 }

@@ -28,7 +28,8 @@ namespace MaskGame.UI
         private bool isTransitioning = false;
 
         // 简单的像素化Shader代码
-        private const string PixelateShader = @"
+        private const string PixelateShader =
+            @"
 Shader ""Hidden/Pixelate""
 {
     Properties
@@ -244,7 +245,12 @@ Shader ""Hidden/Pixelate""
                 yield return null;
             }
 
-            transitionImage.color = new Color(transitionColor.r, transitionColor.g, transitionColor.b, 0f);
+            transitionImage.color = new Color(
+                transitionColor.r,
+                transitionColor.g,
+                transitionColor.b,
+                0f
+            );
             transitionImage.transform.localScale = Vector3.one;
         }
     }

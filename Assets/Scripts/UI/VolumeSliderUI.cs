@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 namespace MaskGame.UI
 {
@@ -56,7 +56,8 @@ namespace MaskGame.UI
         /// </summary>
         private void UpdateSliderFromAudioManager()
         {
-            if (AudioManager.Instance == null || slider == null) return;
+            if (AudioManager.Instance == null || slider == null)
+                return;
 
             isUpdatingValue = true;
 
@@ -65,7 +66,7 @@ namespace MaskGame.UI
                 VolumeType.Master => AudioManager.Instance.MasterVolume,
                 VolumeType.Music => AudioManager.Instance.MusicVolume,
                 VolumeType.SFX => AudioManager.Instance.SFXVolume,
-                _ => 1f
+                _ => 1f,
             };
 
             slider.value = currentVolume;
@@ -79,7 +80,8 @@ namespace MaskGame.UI
         /// </summary>
         private void OnSliderValueChanged(float value)
         {
-            if (isUpdatingValue || AudioManager.Instance == null) return;
+            if (isUpdatingValue || AudioManager.Instance == null)
+                return;
 
             switch (volumeType)
             {
@@ -113,9 +115,9 @@ namespace MaskGame.UI
         /// </summary>
         public enum VolumeType
         {
-            Master,  // 主音量
-            Music,   // 音乐
-            SFX      // 音效
+            Master, // 主音量
+            Music, // 音乐
+            SFX, // 音效
         }
     }
 }

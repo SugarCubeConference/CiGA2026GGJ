@@ -1,13 +1,14 @@
 using System.Collections.Generic;
+using MaskGame.Data;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using MaskGame.Data;
 
 namespace MaskGame.UI
 {
     // 前向声明引用
     using MaskGame.Managers;
+
     /// <summary>
     /// 技能奖励面板UI - 每天结束后显示技能选择
     /// </summary>
@@ -123,7 +124,7 @@ namespace MaskGame.UI
             if (panelRoot != null)
             {
                 panelRoot.SetActive(true);
-                
+
                 // 递归激活所有子对象（包括嵌套的子对象）
                 ActivateAllChildren(panelRoot.transform);
             }
@@ -136,17 +137,30 @@ namespace MaskGame.UI
         /// </summary>
         private void SetupSkillButton(int index, SkillData skill)
         {
-            if (skillNameTexts != null && index < skillNameTexts.Length && skillNameTexts[index] != null)
+            if (
+                skillNameTexts != null
+                && index < skillNameTexts.Length
+                && skillNameTexts[index] != null
+            )
             {
                 skillNameTexts[index].text = skill.skillName;
             }
 
-            if (skillDescTexts != null && index < skillDescTexts.Length && skillDescTexts[index] != null)
+            if (
+                skillDescTexts != null
+                && index < skillDescTexts.Length
+                && skillDescTexts[index] != null
+            )
             {
                 skillDescTexts[index].text = skill.description;
             }
 
-            if (skillIcons != null && index < skillIcons.Length && skillIcons[index] != null && skill.icon != null)
+            if (
+                skillIcons != null
+                && index < skillIcons.Length
+                && skillIcons[index] != null
+                && skill.icon != null
+            )
             {
                 skillIcons[index].sprite = skill.icon;
                 skillIcons[index].gameObject.SetActive(true);
@@ -162,11 +176,13 @@ namespace MaskGame.UI
         /// </summary>
         private void OnSkillSelected(int index)
         {
-            if (!isWaitingForSelection) return;
-            if (index < 0 || index >= currentSkillOptions.Count) return;
+            if (!isWaitingForSelection)
+                return;
+            if (index < 0 || index >= currentSkillOptions.Count)
+                return;
 
             SkillData selectedSkill = currentSkillOptions[index];
-            
+
             // 获得技能
             if (SkillManager.Instance != null)
             {
@@ -188,7 +204,8 @@ namespace MaskGame.UI
         /// </summary>
         public void SkipSkillSelection()
         {
-            if (!isWaitingForSelection) return;
+            if (!isWaitingForSelection)
+                return;
 
             // 隐藏面板（不选择任何技能）
             HidePanel();
@@ -206,7 +223,7 @@ namespace MaskGame.UI
         private void HidePanel()
         {
             isWaitingForSelection = false;
-            
+
             if (panelRoot != null)
             {
                 panelRoot.SetActive(false);
@@ -224,7 +241,8 @@ namespace MaskGame.UI
         /// </summary>
         private void UpdateAcquiredSkillsDisplay(List<SkillData> skills)
         {
-            if (acquiredSkillsText == null) return;
+            if (acquiredSkillsText == null)
+                return;
 
             if (SkillManager.Instance == null)
             {
@@ -275,7 +293,7 @@ namespace MaskGame.UI
             foreach (Transform child in parent)
             {
                 child.gameObject.SetActive(true);
-                
+
                 // 递归激活子对象的子对象
                 if (child.childCount > 0)
                 {

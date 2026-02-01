@@ -12,20 +12,24 @@ namespace MaskGame.UI
         [Header("线条设置")]
         [SerializeField]
         private int lineCount = 15; // 线条数量
+
         [SerializeField]
         private float lineWidth = 3f; // 线条宽度
+
         [SerializeField]
         private Color lineColor = new Color(0.8f, 0.1f, 0.1f, 0.8f); // 红色
 
         [Header("生成范围")]
         [SerializeField]
         private float areaWidth = 300f;
+
         [SerializeField]
         private float areaHeight = 100f;
 
         [Header("线条复杂度")]
         [SerializeField]
         private int pointsPerLine = 8; // 每条线的点数
+
         [SerializeField]
         private float randomness = 30f; // 随机偏移程度
 

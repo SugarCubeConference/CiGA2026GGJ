@@ -41,7 +41,7 @@ namespace MaskGame.UI
             if (settingCanvas != null)
             {
                 settingCanvas.SetActive(true);
-                
+
                 // 暂停倒计时
                 if (GameManager.Instance != null)
                 {

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using MaskGame.Data;
 using MaskGame.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
-using MaskGame.Data;
 
 namespace MaskGame.Managers
 {
@@ -24,7 +24,8 @@ namespace MaskGame.Managers
 
         // 玩家已获得的技能及叠加层数
         private Dictionary<SkillType, int> acquiredSkills = new Dictionary<SkillType, int>();
-        private Dictionary<SkillType, SkillData> skillDataMap = new Dictionary<SkillType, SkillData>();
+        private Dictionary<SkillType, SkillData> skillDataMap =
+            new Dictionary<SkillType, SkillData>();
 
         // 一次性技能使用状态（每次遭遇重置）
         private bool eloquenceUsedThisEncounter = false;
@@ -66,10 +67,11 @@ namespace MaskGame.Managers
         public List<SkillData> GetRandomSkills(int count = 3)
         {
             List<SkillData> availableSkills = new List<SkillData>();
-            
+
             foreach (var skill in allSkills)
             {
-                if (skill == null) continue;
+                if (skill == null)
+                    continue;
 
                 // 检查是否可以获得（未获得或可叠加且未达上限）
                 if (!acquiredSkills.ContainsKey(skill.skillType))
@@ -101,7 +103,8 @@ namespace MaskGame.Managers
         /// </summary>
         public void AcquireSkill(SkillData skill)
         {
-            if (skill == null) return;
+            if (skill == null)
+                return;
 
             if (!acquiredSkills.ContainsKey(skill.skillType))
             {
@@ -157,7 +160,8 @@ namespace MaskGame.Managers
         /// </summary>
         public float GetTimeBonus()
         {
-            if (!HasSkill(SkillType.Battery)) return 1f;
+            if (!HasSkill(SkillType.Battery))
+                return 1f;
 
             var skill = skillDataMap[SkillType.Battery];
             int stacks = GetSkillStacks(SkillType.Battery);
@@ -178,8 +182,10 @@ namespace MaskGame.Managers
         /// </summary>
         public bool TryUseEloquence()
         {
-            if (!HasSkill(SkillType.Eloquence)) return false;
-            if (eloquenceUsedThisEncounter) return false;
+            if (!HasSkill(SkillType.Eloquence))
+                return false;
+            if (eloquenceUsedThisEncounter)
+                return false;
 
             eloquenceUsedThisEncounter = true;
             return true;
@@ -190,8 +196,10 @@ namespace MaskGame.Managers
         /// </summary>
         public bool TryUseInnerDeduction()
         {
-            if (!HasSkill(SkillType.InnerDeduction)) return false;
-            if (innerDeductionUsedThisEncounter) return false;
+            if (!HasSkill(SkillType.InnerDeduction))
+                return false;
+            if (innerDeductionUsedThisEncounter)
+                return false;
 
             innerDeductionUsedThisEncounter = true;
             return true;

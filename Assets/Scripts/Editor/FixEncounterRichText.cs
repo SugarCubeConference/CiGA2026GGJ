@@ -1,7 +1,7 @@
-using UnityEngine;
-using UnityEditor;
 using System.IO;
 using System.Text.RegularExpressions;
+using UnityEditor;
+using UnityEngine;
 
 namespace MaskGame.Editor
 {
@@ -15,7 +15,11 @@ namespace MaskGame.Editor
         public static void FixAllEncounters()
         {
             string encounterPath = "Assets/Resources/Encounters";
-            string[] assetFiles = Directory.GetFiles(encounterPath, "*.asset", SearchOption.AllDirectories);
+            string[] assetFiles = Directory.GetFiles(
+                encounterPath,
+                "*.asset",
+                SearchOption.AllDirectories
+            );
 
             int fixedCount = 0;
 

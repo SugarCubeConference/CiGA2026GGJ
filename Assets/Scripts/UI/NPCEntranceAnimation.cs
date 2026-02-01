@@ -12,16 +12,20 @@ namespace MaskGame.UI
         [Header("入场设置")]
         [SerializeField]
         private float startOffsetX = -100f; // 起始X偏移（左侧）
+
         [SerializeField]
         private float moveDuration = 0.8f; // 移动持续时间
+
         [SerializeField]
         private AnimationCurve moveCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         [Header("抖动设置")]
         [SerializeField]
         private float shakeAmplitude = 15f; // 抖动幅度
+
         [SerializeField]
         private float shakeDuration = 0.15f; // 单次抖动时间
+
         [SerializeField]
         private int shakeCount = 2; // 抖动次数
 
@@ -32,7 +36,7 @@ namespace MaskGame.UI
         private void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
-            
+
             // 添加CanvasGroup用于淡入效果
             canvasGroup = GetComponent<CanvasGroup>();
             if (canvasGroup == null)
@@ -55,9 +59,12 @@ namespace MaskGame.UI
         {
             // 保存目标位置
             targetPosition = rectTransform.anchoredPosition;
-            
+
             // 设置起始位置和透明度
-            rectTransform.anchoredPosition = new Vector2(targetPosition.x + startOffsetX, targetPosition.y);
+            rectTransform.anchoredPosition = new Vector2(
+                targetPosition.x + startOffsetX,
+                targetPosition.y
+            );
             canvasGroup.alpha = 0f;
 
             // 淡入并平移到目标位置
@@ -71,8 +78,12 @@ namespace MaskGame.UI
                 float curveT = moveCurve.Evaluate(t);
 
                 // 平移
-                rectTransform.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, curveT);
-                
+                rectTransform.anchoredPosition = Vector2.Lerp(
+                    startPosition,
+                    targetPosition,
+                    curveT
+                );
+
                 // 淡入
                 canvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
 
