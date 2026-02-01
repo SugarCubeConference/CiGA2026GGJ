@@ -886,8 +886,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fddd39d799a3287478f6d0cb790adae6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  saveKey: Tutorial_Shown
-  allowReset: 1
 --- !u!114 &186405399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6614,6 +6612,16 @@ MonoBehaviour:
   bgmSource: {fileID: 0}
   normalBGM: {fileID: 8300000, guid: ec6d598406764964091f88b9bcb31673, type: 3}
   bossBGM: {fileID: 8300000, guid: 97c9effecebd4dd4eacad8d047f1ead6, type: 3}
+  sfxSource: {fileID: 0}
+  hitSounds:
+  - {fileID: 8300000, guid: 48b4337a7ea2995449188b776e959de0, type: 3}
+  - {fileID: 8300000, guid: 622005a634a2bd548985f101bd1d2e8f, type: 3}
+  - {fileID: 8300000, guid: 00e024d5e76239b46b21b06bd513d21f, type: 3}
+  - {fileID: 8300000, guid: a1b61d727057b774cb7a65f6520b730b, type: 3}
+  - {fileID: 8300000, guid: 6d501cd26d6666a4e8ff733f01fa6287, type: 3}
+  - {fileID: 8300000, guid: 81168d5173f694145b12e36091f54451, type: 3}
+  - {fileID: 8300000, guid: 405773a9c199b1e4a893e1564c15e00f, type: 3}
+  - {fileID: 8300000, guid: af374276bd588574cb0e288a7016ed51, type: 3}
   masterVolume: 1
   musicVolume: 1
   sfxVolume: 1

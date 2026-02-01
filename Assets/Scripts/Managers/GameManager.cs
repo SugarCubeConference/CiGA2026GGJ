@@ -322,26 +322,13 @@ namespace MaskGame.Managers
             {
                 if (bossMode)
                 {
-                    UnityEngine.Debug.Log("所有BOSS encounters已用完，游戏胜利！");
+                    // BOSS战完成，游戏胜利
                     GameWin();
                 }
                 else
                 {
-                    UnityEngine.Debug.Log("普通encounters已用完，进入BOSS战！");
-                    bossMode = true;
-                    currentEncounterIndex = 0; // 重置encounter索引
-                    usedBossEncounters.Clear();
-                    
-                    // 切换BOSS BGM
-                    if (AudioManager.Instance != null)
-                    {
-                        AudioManager.Instance.PlayBossBGM();
-                    }
-                    
-                    // 触发BOSS模式开始事件
-                    OnBossModeStart.Invoke();
-                    
-                    ShuffleEncounters();
+                    // 所有普通encounters已用完，进入BOSS战
+                    EnterBossMode();
                 }
                 return;
             }
@@ -364,10 +351,42 @@ namespace MaskGame.Managers
         }
 
         /// <summary>
+        /// 进入BOSS战模式
+        /// </summary>
+        private void EnterBossMode()
+        {
+            bossMode = true;
+            currentEncounterIndex = 0;
+            usedBossEncounters.Clear();
+            
+            // 切换BOSS BGM
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossBGM();
+            }
+            
+            // 触发BOSS模式开始事件
+            OnBossModeStart.Invoke();
+            
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 更新kernel shadow到BOSS模式
+            InitShadow();
+#endif
+            
+            // 重新洗牌并加载BOSS encounter
+            ShuffleEncounters();
+            if (shuffledEncounters.Count > 0)
+            {
+                LoadNextEncounter();
+            }
+        }
+
+        /// <summary>
         /// 加载下一个对话
         /// </summary>
         private void LoadNextEncounter()
         {
+            // 如果当前shuffledEncounters为空，尝试重新洗牌
             if (shuffledEncounters.Count == 0)
             {
                 ShuffleEncounters();
@@ -376,12 +395,24 @@ namespace MaskGame.Managers
             // 如果ShuffleEncounters后仍然为空，说明没有可用对话
             if (shuffledEncounters.Count == 0)
             {
-                UnityEngine.Debug.LogError(
-                    $"GameManager: 没有可用的对话！请检查：\n"
-                        + $"1. Resources/Encounters/ 文件夹是否存在\n"
-                        + $"2. 文件夹中是否有EncounterData资源\n"
-                        + $"3. 或者在Inspector中配置encounterSet字段"
-                );
+                // ShuffleEncounters已经处理了进入BOSS战或游戏胜利的逻辑
+                // 如果仍为空，说明出现了错误
+                if (!bossMode)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"GameManager: 没有可用的普通对话！请检查：\n"
+                            + $"1. Resources/Encounters/ 文件夹是否存在\n"
+                            + $"2. 文件夹中是否有EncounterData资源\n"
+                            + $"3. 或者在Inspector中配置encounterSet字段"
+                    );
+                }
+                else
+                {
+                    UnityEngine.Debug.LogError(
+                        $"GameManager: 没有可用的BOSS对话！请检查：\n"
+                            + $"Resources/Boss/ 文件夹中是否有EncounterData资源"
+                    );
+                }
                 return;
             }
 
@@ -500,8 +531,11 @@ namespace MaskGame.Managers
 
             if (outcome == AnswerOutcome.Correct)
             {
-                // 回答正确 - 不再加血
-                // 已移除加血逻辑
+                // 回答正确 - 播放hit音效
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayRandomHitSound();
+                }
             }
             else if (outcome == AnswerOutcome.Neutral)
             {
@@ -582,16 +616,9 @@ namespace MaskGame.Managers
 
             OnDayComplete.Invoke();
 
-            // 检查是否通关所有天数
-            if (currentDay >= gameConfig.totalDays)
-            {
-                GameWin();
-            }
-            else
-            {
-                // 显示技能选择面板（而不是直接进入下一天）
-                ShowSkillSelection();
-            }
+            // 不再按天数判断游戏胜利，而是继续抽取encounters
+            // 当所有encounters用完时，会在ShuffleEncounters中自动进入BOSS战
+            ShowSkillSelection();
         }
 
         /// <summary>

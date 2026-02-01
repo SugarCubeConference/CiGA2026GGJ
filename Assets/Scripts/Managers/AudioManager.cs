@@ -25,6 +25,14 @@ namespace MaskGame.Managers
         [SerializeField]
         private AudioClip bossBGM;
 
+        [Header("音效设置")]
+        [SerializeField]
+        private AudioSource sfxSource;
+
+        [SerializeField]
+        [Tooltip("从Assets/Sounds/SE/文件夹拖入所有hit_*.MP3文件")]
+        private AudioClip[] hitSounds;
+
         [Header("音量设置")]
         [SerializeField]
         [Range(0f, 1f)]
@@ -59,6 +67,14 @@ namespace MaskGame.Managers
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 LoadVolumeSettings();
+                
+                // 如果没有音效AudioSource，创建一个
+                if (sfxSource == null)
+                {
+                    sfxSource = gameObject.AddComponent<AudioSource>();
+                    sfxSource.playOnAwake = false;
+                    sfxSource.loop = false;
+                }
             }
             else
             {
@@ -205,6 +221,24 @@ namespace MaskGame.Managers
             bgmSource.clip = normalBGM;
             bgmSource.loop = true;
             bgmSource.Play();
+        }
+
+        /// <summary>
+        /// 随机播放hit音效
+        /// </summary>
+        public void PlayRandomHitSound()
+        {
+            if (sfxSource == null || hitSounds == null || hitSounds.Length == 0)
+                return;
+
+            // 随机选择一个hit音效
+            int randomIndex = Random.Range(0, hitSounds.Length);
+            AudioClip selectedClip = hitSounds[randomIndex];
+
+            if (selectedClip != null)
+            {
+                sfxSource.PlayOneShot(selectedClip, sfxVolume);
+            }
         }
     }
 }
