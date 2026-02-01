@@ -2,6 +2,12 @@ using MaskGame.Simulation;
 
 namespace MaskGame.Simulation.Kernel
 {
+    public enum GameMode : byte
+    {
+        Normal = 0,
+        Boss = 1,
+    }
+
     public enum GamePhase : byte
     {
         WaitAns = 0,
@@ -13,6 +19,9 @@ namespace MaskGame.Simulation.Kernel
     public struct GameState
     {
         public uint Seed;
+        public GameMode Mode;
+        public int NormalCount;
+        public int BossCount;
         public int CurrentDay;
         public int DayIdx;
         public int EncId;

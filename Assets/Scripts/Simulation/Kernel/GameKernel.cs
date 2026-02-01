@@ -10,10 +10,26 @@ namespace MaskGame.Simulation.Kernel
 
         public static GameState NewGame(uint seed, in GameRules rules, int encounterCount)
         {
-            int deckCap = Math.Min(rules.DayEnc, encounterCount);
+            return NewGame(seed, in rules, encounterCount, 0, false);
+        }
+
+        public static GameState NewGame(
+            uint seed,
+            in GameRules rules,
+            int normalCount,
+            int bossCount,
+            bool startBoss
+        )
+        {
+            int totalCount = normalCount + bossCount;
+            int deckCap = Math.Min(rules.DayEnc, Math.Max(normalCount, bossCount));
+
             GameState state = new GameState
             {
                 Seed = seed,
+                Mode = GameMode.Normal,
+                NormalCount = normalCount,
+                BossCount = bossCount,
                 CurrentDay = 1,
                 DayIdx = 0,
                 Health = rules.InitialHealth,
@@ -24,13 +40,24 @@ namespace MaskGame.Simulation.Kernel
                 EloUsed = 0,
                 Phase = GamePhase.WaitAns,
                 UsedCount = 0,
-                UsedBits = new uint[(encounterCount + 31) / 32],
+                UsedBits = new uint[(totalCount + 31) / 32],
                 DayDeck = new int[deckCap],
                 DeckSize = 0,
-                PoolScratch = new int[encounterCount],
+                PoolScratch = new int[totalCount],
             };
 
-            BeginDay(ref state);
+            if (bossCount > 0 && (startBoss || normalCount <= 0))
+                state.Mode = GameMode.Boss;
+
+            if (state.Mode == GameMode.Boss)
+            {
+                BeginBoss(ref state);
+            }
+            else
+            {
+                BeginNormal(ref state);
+            }
+
             return state;
         }
 
@@ -65,6 +92,9 @@ namespace MaskGame.Simulation.Kernel
         {
             ulong hash = Fnv1a64Offset;
             Mix(ref hash, state.Seed);
+            Mix(ref hash, (uint)state.Mode);
+            Mix(ref hash, (uint)state.NormalCount);
+            Mix(ref hash, (uint)state.BossCount);
             Mix(ref hash, (uint)state.CurrentDay);
             Mix(ref hash, (uint)state.DayIdx);
             Mix(ref hash, (uint)state.EncId);
@@ -101,7 +131,7 @@ namespace MaskGame.Simulation.Kernel
 
             state.CurrentDay++;
             state.DayIdx = 0;
-            BeginDay(ref state);
+            BeginNormal(ref state);
         }
 
         private static void ApplyAnswer(
@@ -135,7 +165,9 @@ namespace MaskGame.Simulation.Kernel
             }
             else if (!isNeutral)
             {
-                state.Health -= rules.BatteryPenalty;
+                int penalty =
+                    state.Mode == GameMode.Boss ? rules.BossPenalty : rules.BatteryPenalty;
+                state.Health -= penalty;
                 if (state.Health <= 0)
                 {
                     state.Phase = GamePhase.GameLost;
@@ -153,18 +185,36 @@ namespace MaskGame.Simulation.Kernel
                 return;
             }
 
-            state.Phase =
-                state.CurrentDay >= rules.TotalDays || state.DeckSize < rules.DayEnc
-                    ? GamePhase.GameWon
-                    : GamePhase.WaitDay;
+            if (state.Mode == GameMode.Boss)
+            {
+                BeginBoss(ref state);
+                return;
+            }
+
+            if (state.DeckSize < rules.DayEnc)
+            {
+                if (state.BossCount > 0)
+                {
+                    state.Mode = GameMode.Boss;
+                    state.DayIdx = 0;
+                    BeginBoss(ref state);
+                    return;
+                }
+
+                state.Phase = GamePhase.GameWon;
+                return;
+            }
+
+            state.Phase = GamePhase.WaitDay;
         }
 
-        private static void BeginDay(ref GameState state)
+        private static bool BeginDeck(ref GameState state, int start, int count)
         {
             int[] scratch = state.PoolScratch;
-            int encCount = scratch.Length;
             int availCount = 0;
-            for (int i = 0; i < encCount; i++)
+            int end = start + count;
+
+            for (int i = start; i < end; i++)
             {
                 if (!IsUsed(in state, i))
                 {
@@ -173,13 +223,10 @@ namespace MaskGame.Simulation.Kernel
                 }
             }
 
+            state.DeckSize = 0;
+            state.DeckLeft = 0;
             if (availCount <= 0)
-            {
-                state.DeckSize = 0;
-                state.DeckLeft = 0;
-                state.Phase = GamePhase.GameWon;
-                return;
-            }
+                return false;
 
             for (int i = availCount - 1; i > 0; i--)
             {
@@ -201,6 +248,31 @@ namespace MaskGame.Simulation.Kernel
             state.EncId = state.DayDeck[deckSize - 1];
             MarkUsed(ref state, state.EncId);
             state.EloUsed = 0;
+            return true;
+        }
+
+        private static void BeginNormal(ref GameState state)
+        {
+            if (BeginDeck(ref state, 0, state.NormalCount))
+                return;
+
+            if (state.BossCount > 0)
+            {
+                state.Mode = GameMode.Boss;
+                state.DayIdx = 0;
+                BeginBoss(ref state);
+                return;
+            }
+
+            state.Phase = GamePhase.GameWon;
+        }
+
+        private static void BeginBoss(ref GameState state)
+        {
+            if (BeginDeck(ref state, state.NormalCount, state.BossCount))
+                return;
+
+            state.Phase = GamePhase.GameWon;
         }
 
         private static void ApplyHeal(ref GameState state, int amount, in GameRules rules)
