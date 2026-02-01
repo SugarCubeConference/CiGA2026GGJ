@@ -39,7 +39,7 @@ jobs:
           projectPath: .
           unityVersion: 2022.3.22f1
           targetPlatform: WebGL
-          customParameters: -logFile /github/workspace/Editor.log -timestamps
+          customParameters: -logFile Editor.log -timestamps
       - name: Locate WebGL output
         run: |
           set -euo pipefail
@@ -51,13 +51,23 @@ jobs:
           fi
           touch "${PAGE_DIR}/.nojekyll"
           echo "PAGE_DIR=${PAGE_DIR}" >> "${GITHUB_ENV}"
+      - name: Collect Unity logs
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p unity_logs
+          if [ -f Editor.log ]; then cp Editor.log unity_logs/; fi
+          if [ -f build.log ]; then cp build.log unity_logs/; fi
+          if [ -d Logs ]; then cp -R Logs unity_logs/; fi
+          echo "Collected logs:"
+          find unity_logs -type f -maxdepth 3 -print -exec ls -la {} \; || true
       - name: Upload Unity logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unity-logs
           path: |
-            Editor.log
+            unity_logs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.PAGE_DIR }}
