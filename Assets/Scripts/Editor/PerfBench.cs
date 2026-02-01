@@ -17,27 +17,35 @@ namespace MaskGame.Editor
         private const uint BenchStream = 0x42454E43u; // "BENC"
         private const uint FuzzStream = 0x46555A5Au; // "FUZZ"
 
-        private readonly struct BenchRes
-        {
-            public readonly int Seeds;
-            public readonly int Rounds;
-            public readonly int Steps;
-            public readonly int Gc0;
-            public readonly long TimeUs;
-            public readonly long UsedDelta;
-            public readonly long HeapDelta;
+	        private readonly struct BenchRes
+	        {
+	            public readonly int Seeds;
+	            public readonly int Rounds;
+	            public readonly int Steps;
+	            public readonly int Gen0Gc;
+	            public readonly long TimeUs;
+	            public readonly long UsedDelta;
+	            public readonly long HeapDelta;
 
-            public BenchRes(int seeds, int rounds, int steps, int gc0, long timeUs, long usedDelta, long heapDelta)
-            {
-                Seeds = seeds;
-                Rounds = rounds;
-                Steps = steps;
-                Gc0 = gc0;
-                TimeUs = timeUs;
-                UsedDelta = usedDelta;
-                HeapDelta = heapDelta;
-            }
-        }
+	            public BenchRes(
+	                int seeds,
+	                int rounds,
+	                int steps,
+	                int gen0Gc,
+	                long timeUs,
+	                long usedDelta,
+	                long heapDelta
+	            )
+	            {
+	                Seeds = seeds;
+	                Rounds = rounds;
+	                Steps = steps;
+	                Gen0Gc = gen0Gc;
+	                TimeUs = timeUs;
+	                UsedDelta = usedDelta;
+	                HeapDelta = heapDelta;
+	            }
+	        }
 
         [MenuItem(MenuRoot + "Run (5000)")]
         public static void Run5000()
@@ -136,11 +144,11 @@ namespace MaskGame.Editor
                 SimKernel(seeds[i], in rules, defs, out _);
             }
 
-            ForceGc();
-            long used0 = Profiler.GetMonoUsedSizeLong();
-            long heap0 = Profiler.GetMonoHeapSizeLong();
-            int gc0 = GC.CollectionCount(0);
-            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+	            ForceGc();
+	            long used0 = Profiler.GetMonoUsedSizeLong();
+	            long heap0 = Profiler.GetMonoHeapSizeLong();
+	            int gen0Start = GC.CollectionCount(0);
+	            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
 
             int steps = 0;
             for (int r = 0; r < rounds; r++)
@@ -158,16 +166,16 @@ namespace MaskGame.Editor
             long used1 = Profiler.GetMonoUsedSizeLong();
             long heap1 = Profiler.GetMonoHeapSizeLong();
 
-            return new BenchRes(
-                seeds: seeds.Length,
-                rounds: rounds,
-                steps: steps,
-                gc0: GC.CollectionCount(0) - gc0,
-                timeUs: us,
-                usedDelta: used1 - used0,
-                heapDelta: heap1 - heap0
-            );
-        }
+	            return new BenchRes(
+	                seeds: seeds.Length,
+	                rounds: rounds,
+	                steps: steps,
+	                gen0Gc: GC.CollectionCount(0) - gen0Start,
+	                timeUs: us,
+	                usedDelta: used1 - used0,
+	                heapDelta: heap1 - heap0
+	            );
+	        }
 
         private static void SimKernel(
             uint seed,
@@ -209,11 +217,11 @@ namespace MaskGame.Editor
                 SimLegacy(seeds[i], in rules, encData, out _, out _);
             }
 
-            ForceGc();
-            long used0 = Profiler.GetMonoUsedSizeLong();
-            long heap0 = Profiler.GetMonoHeapSizeLong();
-            int gc0 = GC.CollectionCount(0);
-            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+	            ForceGc();
+	            long used0 = Profiler.GetMonoUsedSizeLong();
+	            long heap0 = Profiler.GetMonoHeapSizeLong();
+	            int gen0Start = GC.CollectionCount(0);
+	            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
 
             int steps = 0;
             for (int r = 0; r < rounds; r++)
@@ -230,16 +238,16 @@ namespace MaskGame.Editor
             long used1 = Profiler.GetMonoUsedSizeLong();
             long heap1 = Profiler.GetMonoHeapSizeLong();
 
-            return new BenchRes(
-                seeds: seeds.Length,
-                rounds: rounds,
-                steps: steps,
-                gc0: GC.CollectionCount(0) - gc0,
-                timeUs: us,
-                usedDelta: used1 - used0,
-                heapDelta: heap1 - heap0
-            );
-        }
+	            return new BenchRes(
+	                seeds: seeds.Length,
+	                rounds: rounds,
+	                steps: steps,
+	                gen0Gc: GC.CollectionCount(0) - gen0Start,
+	                timeUs: us,
+	                usedDelta: used1 - used0,
+	                heapDelta: heap1 - heap0
+	            );
+	        }
 
         private static void ForceGc()
         {
@@ -398,19 +406,19 @@ namespace MaskGame.Editor
                 FormatOne("Kernel", in kernel);
         }
 
-        private static string FormatOne(string name, in BenchRes res)
-        {
-            double ms = res.TimeUs / 1000.0;
-            int games = res.Seeds * res.Rounds;
-            double avgMs = games > 0 ? ms / games : 0;
-            double avgUs = res.Steps > 0 ? (double)res.TimeUs / res.Steps : 0;
-            double usedGame = games > 0 ? (double)res.UsedDelta / games : 0;
-            double usedStep = res.Steps > 0 ? (double)res.UsedDelta / res.Steps : 0;
+	        private static string FormatOne(string name, in BenchRes res)
+	        {
+	            double ms = res.TimeUs / 1000.0;
+	            int games = res.Seeds * res.Rounds;
+	            double avgMs = games > 0 ? ms / games : 0;
+	            double stepUs = res.Steps > 0 ? (double)res.TimeUs / res.Steps : 0;
+	            double gameBytes = games > 0 ? (double)res.UsedDelta / games : 0;
+	            double stepBytes = res.Steps > 0 ? (double)res.UsedDelta / res.Steps : 0;
 
-            return
-                $"{name}: seeds={res.Seeds} rounds={res.Rounds} games={games} steps={res.Steps} timeUs={res.TimeUs} timeMs={ms:F3} " +
-                $"avgMs={avgMs:F4} avgUsStep={avgUs:F4} usedDelta={res.UsedDelta} heapDelta={res.HeapDelta} " +
-                $"usedBGame={usedGame:F2} usedBStep={usedStep:F4} gc0={res.Gc0}";
-        }
-    }
-}
+	            return
+	                $"{name}: seeds={res.Seeds} rounds={res.Rounds} games={games} steps={res.Steps} timeUs={res.TimeUs} timeMs={ms:F3} " +
+	                $"avgMs={avgMs:F4} stepUs={stepUs:F4} usedDelta={res.UsedDelta} heapDelta={res.HeapDelta} " +
+	                $"gameBytes={gameBytes:F2} stepBytes={stepBytes:F4} gen0Gc={res.Gen0Gc}";
+	        }
+	    }
+	}
