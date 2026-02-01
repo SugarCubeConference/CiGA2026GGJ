@@ -19,7 +19,7 @@ namespace MaskGame.Managers
     /// <summary>
     /// 游戏管理器 - 控制游戏流程、天数、难度
     /// </summary>
-    public class GameManager : MonoBehaviour
+    public partial class GameManager : MonoBehaviour
     {
         private enum GameState
         {
@@ -146,12 +146,19 @@ namespace MaskGame.Managers
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
             usedEncounters.Clear(); // 清空已使用encounters
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            InitShadow();
+#endif
 
             OnDayChanged.Invoke(currentDay);
             OnBatteryChanged.Invoke(socialBattery);
 
             ShuffleEncounters();
             LoadNextEncounter();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CheckShadow("init");
+#endif
         }
 
         private List<EncounterData> GetPool()
@@ -180,6 +187,10 @@ namespace MaskGame.Managers
                             b != null ? b.name : string.Empty
                         )
                 );
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (shadowOn)
+                    LogEnc(loaded, "Resources");
+#endif
 
                 encounterPool.Clear(); // 清空Inspector中可能配置的空数据
                 if (loaded != null && loaded.Length > 0)
@@ -326,7 +337,16 @@ namespace MaskGame.Managers
                 return;
 
             state = GameState.Resolve;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ShadowAnswer(selectedMask, isTimeout);
+#endif
+
             ProcessAnswer(selectedMask, isTimeout);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CheckShadow("answer");
+#endif
         }
 
         /// <summary>
@@ -501,6 +521,11 @@ namespace MaskGame.Managers
             {
                 OnBatteryChanged.Invoke(socialBattery);
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ShadowHeal(amount);
+            CheckShadow("restore_health");
+#endif
         }
 
         private IEnumerator AdvanceToNextDay()
@@ -511,10 +536,18 @@ namespace MaskGame.Managers
             currentEncounterIndex = 0;
             // 血量不重置，保持当前值
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ShadowDay();
+#endif
+
             OnDayChanged.Invoke(currentDay);
 
             ShuffleEncounters();
             LoadNextEncounter();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CheckShadow("advance_day");
+#endif
         }
 
         /// <summary>
