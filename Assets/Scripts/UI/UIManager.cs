@@ -62,6 +62,11 @@ namespace MaskGame.UI
         [SerializeField]
         private bool enableTypewriter = true; // 是否启用打字机效果
 
+        [Header("BOSS战氛围")]
+        [SerializeField]
+        [Tooltip("BOSS战氛围文本生成器")]
+        private BossAtmosphereText bossAtmosphereText;
+
         private GameManager gameManager;
         private TypewriterEffect typewriterEffect;
         private Canvas cachedCanvas;
@@ -90,6 +95,8 @@ namespace MaskGame.UI
             gameManager.OnTimeChanged.AddListener(UpdateTime);
             gameManager.OnNewEncounter.AddListener(DisplayEncounter);
             gameManager.OnAnswerResult.AddListener(ShowAnswerFeedback);
+            gameManager.OnBossModeStart.AddListener(StartBossAtmosphere);
+            gameManager.OnBossModeEnd.AddListener(StopBossAtmosphere);
 
             cachedCanvas = GetComponentInParent<Canvas>();
             normalSlashColorHex = ColorUtility.ToHtmlStringRGB(normalSlashColor);
@@ -482,6 +489,28 @@ namespace MaskGame.UI
         private void OnMaskClicked(MaskType maskType)
         {
             gameManager.SelectMask(maskType);
+        }
+
+        /// <summary>
+        /// 启动BOSS战氛围文本
+        /// </summary>
+        public void StartBossAtmosphere()
+        {
+            if (bossAtmosphereText != null)
+            {
+                bossAtmosphereText.StartGenerating();
+            }
+        }
+
+        /// <summary>
+        /// 停止BOSS战氛围文本
+        /// </summary>
+        public void StopBossAtmosphere()
+        {
+            if (bossAtmosphereText != null)
+            {
+                bossAtmosphereText.StopGenerating();
+            }
         }
     }
 }

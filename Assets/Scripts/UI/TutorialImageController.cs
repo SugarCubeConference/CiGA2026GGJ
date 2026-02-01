@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace MaskGame.UI
 {
@@ -17,6 +18,18 @@ namespace MaskGame.UI
         [Tooltip("是否允许重置（调试用）")]
         private bool allowReset = false;
 
+        private CanvasGroup canvasGroup;
+
+        private void Awake()
+        {
+            // 确保有CanvasGroup来控制交互阻挡
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
         private void Start()
         {
             // 检查是否已经显示过教程
@@ -24,6 +37,7 @@ namespace MaskGame.UI
             {
                 // 已经显示过，直接隐藏并恢复计时
                 gameObject.SetActive(false);
+                canvasGroup.blocksRaycasts = false;
                 
                 var gameManager = MaskGame.Managers.GameManager.Instance;
                 if (gameManager != null)
@@ -33,8 +47,10 @@ namespace MaskGame.UI
             }
             else
             {
-                // 第一次显示，确保可见（计时保持暂停）
+                // 第一次显示，确保可见并阻挡交互
                 gameObject.SetActive(true);
+                canvasGroup.blocksRaycasts = true;
+                canvasGroup.interactable = true;
             }
         }
 
@@ -45,6 +61,12 @@ namespace MaskGame.UI
         {
             // 标记已显示
             MarkTutorialAsShown();
+            
+            // 禁用交互阻挡
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = false;
+            }
             
             // 隐藏教程图
             gameObject.SetActive(false);

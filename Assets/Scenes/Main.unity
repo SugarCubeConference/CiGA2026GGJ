@@ -1017,10 +1017,8 @@ MonoBehaviour:
   npcSpawnPoint: {fileID: 1179613836}
   useFixedSeed: 0
   fixedSeed: 1
-  encounterPool:
-  - {fileID: 11400000, guid: 4352b7f70ac8ef5428978f98c7dd5fa6, type: 2}
-  - {fileID: 11400000, guid: 9282beaaf333de448aae3d3dfd8e3050, type: 2}
-  - {fileID: 11400000, guid: 80d85346959f59644a8cae2e92677e83, type: 2}
+  startInBossMode: 1
+  encounterPool: []
   OnDayChanged:
     m_PersistentCalls:
       m_Calls: []

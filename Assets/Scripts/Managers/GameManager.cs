@@ -50,6 +50,11 @@ namespace MaskGame.Managers
         [SerializeField]
         private int fixedSeed = 1;
 
+        [Header("调试功能")]
+        [SerializeField]
+        [Tooltip("勾选后直接进入BOSS战（仅调试用）")]
+        private bool startInBossMode = false;
+
         [SerializeField]
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
@@ -92,6 +97,8 @@ namespace MaskGame.Managers
         public UnityEvent OnGameOver = new UnityEvent();
         public UnityEvent OnDayComplete = new UnityEvent();
         public UnityEvent OnShowSkillSelection = new UnityEvent(); // 显示技能选择事件
+        public UnityEvent OnBossModeStart = new UnityEvent(); // BOSS模式开始事件
+        public UnityEvent OnBossModeEnd = new UnityEvent(); // BOSS模式结束事件
 
         private void Awake()
         {
@@ -154,9 +161,23 @@ namespace MaskGame.Managers
             usedBossEncounters.Clear();
             bossPool.Clear();
             bossResLoaded = false;
-            bossMode = false;
+            
+            // 调试：直接进入BOSS模式
+            if (startInBossMode)
+            {
+                bossMode = true;
+                isPaused = false; // 调试模式直接开始，不等待教程
+                UnityEngine.Debug.Log("调试模式：直接进入BOSS战！");
+                
+                // 触发BOSS模式开始事件
+                OnBossModeStart.Invoke();
+            }
+            else
+            {
+                bossMode = false;
+            }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            InitShadow();
+            InitShadow(); // 在bossMode设置之后初始化shadow，确保使用正确的pool
 #endif
 
             OnDayChanged.Invoke(currentDay);
@@ -165,9 +186,24 @@ namespace MaskGame.Managers
             ShuffleEncounters();
             LoadNextEncounter();
 
+            // 在所有初始化完成后切换BGM（使用协程延迟确保AudioManager已准备好）
+            if (startInBossMode)
+            {
+                StartCoroutine(PlayBossBGMDelayed());
+            }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             CheckShadow("init");
 #endif
+        }
+
+        private System.Collections.IEnumerator PlayBossBGMDelayed()
+        {
+            yield return null; // 等待一帧
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossBGM();
+            }
         }
 
         private List<EncounterData> GetPool()
@@ -294,6 +330,7 @@ namespace MaskGame.Managers
                 {
                     UnityEngine.Debug.Log("普通encounters已用完，进入BOSS战！");
                     bossMode = true;
+                    currentEncounterIndex = 0; // 重置encounter索引
                     usedBossEncounters.Clear();
                     
                     // 切换BOSS BGM
@@ -301,6 +338,9 @@ namespace MaskGame.Managers
                     {
                         AudioManager.Instance.PlayBossBGM();
                     }
+                    
+                    // 触发BOSS模式开始事件
+                    OnBossModeStart.Invoke();
                     
                     ShuffleEncounters();
                 }
@@ -380,6 +420,10 @@ namespace MaskGame.Managers
             OnNewEncounter.Invoke(currentEncounter);
             OnTimeChanged.Invoke(remainingTime);
             state = GameState.Await;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ShadowLoadEncounter();
+#endif
         }
 
         /// <summary>
@@ -491,6 +535,8 @@ namespace MaskGame.Managers
 
             if (bossMode)
             {
+                // BOSS战也需要递增currentEncounterIndex以保持与kernel同步
+                currentEncounterIndex++;
                 // BOSS战不走天数逻辑，直接进入下一段对话
                 LoadNextEncounter();
                 return;

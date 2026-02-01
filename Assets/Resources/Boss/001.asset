@@ -12,19 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96f1e98aeee92244a846d1006fbfbf0, type: 3}
   m_Name: 001
   m_EditorClassIdentifier: 
-  dialogueText: 
+  dialogueText: "<b>\u6709\u4E9B\u8BDD\u4E00\u8BF4\u51FA\u53E3\uFF0C\u5C31\u4F1A\u6253\u788E\u773C\u524D\u7684\u5E73\u548C\u3002\u8981\u9009\u62E9\u8BF4\u8C0E\u5417\uFF1F</b>"
   optionTexts:
-  - 
-  - 
-  - 
-  - 
+  - "\u8F7B\u8F7B\u6492\u4E2A\u5584\u610F\u7684\u8C0E\uFF0C\u8BA9\u4E00\u5207\u7EF4\u6301\u539F\u6837\u5C31\u597D\u3002"
+  - "\u542B\u7CCA\u5176\u8F9E\uFF0C\u4E0D\u6492\u8C0E\u4E5F\u4E0D\u6233\u7834\u771F\u76F8\u3002"
+  - "\u72B9\u8C6B\u5F88\u4E45\uFF0C\u6700\u7EC8\u8FD8\u662F\u628A\u771F\u5FC3\u6084\u6084\u85CF\u8D77\u6765\u3002"
+  - "\u5766\u7136\u8BF4\u51FA\u4E00\u5207\uFF0C\u54EA\u6015\u5E73\u9759\u4F1A\u5C31\u6B64\u6D88\u5931\u3002"
   optionFeedbacks:
-  - 
-  - 
-  - 
-  - 
-  friendGroup: 
+  - ...
+  - ...
+  - ...
+  - ...
+  friendGroup: "\u6211?"
   npcPrefab: {fileID: 0}
-  correctMask: 0
+  correctMask: 3
   neutralMasks: 
   keywords: 

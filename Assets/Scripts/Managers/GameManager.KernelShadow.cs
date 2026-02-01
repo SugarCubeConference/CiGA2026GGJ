@@ -58,7 +58,8 @@ namespace MaskGame.Managers
             if (!shadowOn)
                 return;
 
-            List<EncounterData> pool = GetPool();
+            // 在BOSS模式下使用BOSS池，否则使用普通池
+            List<EncounterData> pool = bossMode ? GetBossPool() : GetPool();
             int count = pool.Count;
             if (count <= 0)
                 return;
@@ -122,6 +123,52 @@ namespace MaskGame.Managers
                 : Kernel.SimulationCommand.SelectMask((int)selectedMask);
 
             Kernel.GameKernel.Apply(ref shadowState, command, shadowRules, shadowDefs);
+            
+            // BOSS模式下需要额外扣血（kernel使用rules中的batteryPenalty=1，但BOSS模式实际-2）
+            if (bossMode && currentEncounter != null)
+            {
+                bool isCorrect = selectedMask == currentEncounter.correctMask;
+                bool isNeutral = false;
+                
+                if (currentEncounter.neutralMasks != null)
+                {
+                    foreach (var neutralMask in currentEncounter.neutralMasks)
+                    {
+                        if (neutralMask == selectedMask)
+                        {
+                            isNeutral = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // 只有在答错或超时（且不是中立选项）时额外-1血
+                if (!isCorrect && !isNeutral)
+                {
+                    shadowState.Health -= 1;
+                }
+            }
+        }
+
+        private void ShadowLoadEncounter()
+        {
+            if (!shadowOn || !shadowInit)
+                return;
+
+            // 加载encounter时需要同步encounterId到shadow kernel
+            if (currentEncounter != null && shadowIds.TryGetValue(currentEncounter, out int encId))
+            {
+                // 如果shadow kernel还不在WaitAns状态，需要推进到该状态
+                if (shadowState.Phase != Kernel.GamePhase.WaitAns)
+                {
+                    // kernel应该已经处于正确的初始状态，只需要更新EncId
+                    shadowState.EncId = encId;
+                }
+                else
+                {
+                    shadowState.EncId = encId;
+                }
+            }
         }
 
         private void ShadowDay()
