@@ -356,9 +356,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioMixer: {fileID: 0}
-  bgmSource: {fileID: 0}
+  bgmSource: {fileID: 203088531}
   normalBGM: {fileID: 0}
   bossBGM: {fileID: 0}
+  sfxSource: {fileID: 0}
+  hitSounds: []
   masterVolume: 1
   musicVolume: 1
   sfxVolume: 1
