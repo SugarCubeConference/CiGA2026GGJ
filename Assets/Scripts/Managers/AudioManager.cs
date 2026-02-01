@@ -82,6 +82,12 @@ namespace MaskGame.Managers
             }
         }
 
+        private void Start()
+        {
+            // 游戏开始时播放常规BGM
+            PlayNormalBGM();
+        }
+
         /// <summary>
         /// 加载保存的音量设置
         /// </summary>
@@ -203,6 +209,13 @@ namespace MaskGame.Managers
                 return;
             }
 
+            // 如果已经在播放BOSS BGM，不重复播放
+            if (bgmSource.clip == bossBGM && bgmSource.isPlaying)
+            {
+                return;
+            }
+
+            bgmSource.Stop();
             bgmSource.clip = bossBGM;
             bgmSource.loop = true;
             bgmSource.Play();
@@ -218,6 +231,13 @@ namespace MaskGame.Managers
                 return;
             }
 
+            // 如果已经在播放普通BGM，不重复播放
+            if (bgmSource.clip == normalBGM && bgmSource.isPlaying)
+            {
+                return;
+            }
+
+            bgmSource.Stop();
             bgmSource.clip = normalBGM;
             bgmSource.loop = true;
             bgmSource.Play();
