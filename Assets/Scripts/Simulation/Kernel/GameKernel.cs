@@ -5,8 +5,8 @@ namespace MaskGame.Simulation.Kernel
 {
 	public static class GameKernel
 	{
-		private const ulong Fnv1a64Offset = 14695981039346656037UL;
-		private const ulong Fnv1a64Prime = 1099511628211UL;
+		private const ulong Fnv1a64Offset = 14695981039346656037UL; // FNV-1a 64-bit
+		private const ulong Fnv1a64Prime = 1099511628211UL; // FNV-1a 64-bit
 
         public static GameState NewGame(uint seed, in GameRules rules, int encounterCount)
         {
