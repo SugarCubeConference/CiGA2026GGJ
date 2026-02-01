@@ -30,7 +30,6 @@ jobs:
             Library-WebGL-
             Library-
       - uses: game-ci/unity-builder@v4
-        continue-on-error: true
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -56,9 +55,30 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p unity_logs
+          {
+            echo "unity log collection"
+            echo "pwd=$(pwd)"
+            echo "home=${HOME}"
+            echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo "workspace files (top):"
+            ls -la || true
+            echo
+            echo "known log paths:"
+            echo "  ./Editor.log"
+            echo "  ./build.log"
+            echo "  ./Logs/"
+            echo "  ${HOME}/.config/unity3d/Editor.log"
+            echo "  ${HOME}/.local/share/unity3d/Editor.log"
+            echo "  ${HOME}/Library/Logs/Unity/Editor.log"
+          } > unity_logs/README.txt
           if [ -f Editor.log ]; then cp Editor.log unity_logs/; fi
           if [ -f build.log ]; then cp build.log unity_logs/; fi
           if [ -d Logs ]; then cp -R Logs unity_logs/; fi
+          if [ -f "${HOME}/.config/unity3d/Editor.log" ]; then cp "${HOME}/.config/unity3d/Editor.log" unity_logs/Editor.home.log; fi
+          if [ -f "${HOME}/.local/share/unity3d/Editor.log" ]; then cp "${HOME}/.local/share/unity3d/Editor.log" unity_logs/Editor.home2.log; fi
+          if [ -f "${HOME}/Library/Logs/Unity/Editor.log" ]; then cp "${HOME}/Library/Logs/Unity/Editor.log" unity_logs/Editor.macos.log; fi
+          find . -maxdepth 4 -type f -name "*.log" -size -5M -not -path "./unity_logs/*" -print -exec cp --parents {} unity_logs/ \; || true
           echo "Collected logs:"
           find unity_logs -type f -maxdepth 3 -print -exec ls -la {} \; || true
       - name: Upload Unity logs
