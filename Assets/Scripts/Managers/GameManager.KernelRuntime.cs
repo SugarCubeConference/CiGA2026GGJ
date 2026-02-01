@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using MaskGame.Data;
-using MaskGame.Simulation;
 using UnityEngine;
 using Kernel = MaskGame.Simulation.Kernel;
 
@@ -15,36 +14,28 @@ namespace MaskGame.Managers
         private bool kernelInit;
         private Kernel.GameRules kernelRules;
         private Kernel.EncounterDefinition[] kernelDefs;
-        private List<EncounterData> kernelPool;
         private Kernel.GameState kernelState;
 
         private bool KernelInit()
         {
             kernelInit = false;
-            kernelPool = GetPool();
-            if (kernelPool == null || kernelPool.Count <= 0)
+            List<EncounterData> pool = GetPool();
+            List<EncounterData> bossPool = GetBossPool();
+            int normalCount = pool.Count;
+            int bossCount = bossPool.Count;
+
+            if (normalCount <= 0 && bossCount <= 0)
                 return false;
 
-            kernelDefs = new Kernel.EncounterDefinition[kernelPool.Count];
-            for (int i = 0; i < kernelPool.Count; i++)
+            kernelDefs = new Kernel.EncounterDefinition[normalCount + bossCount];
+            for (int i = 0; i < normalCount; i++)
             {
-                EncounterData encounter = kernelPool[i];
+                kernelDefs[i] = BuildDef(pool[i]);
+            }
 
-                byte neutralBits = 0;
-                MaskType[] neutralMasks = encounter.neutralMasks;
-                if (neutralMasks != null)
-                {
-                    for (int n = 0; n < neutralMasks.Length; n++)
-                    {
-                        int maskIndex = (int)neutralMasks[n];
-                        neutralBits = (byte)(neutralBits | (1 << maskIndex));
-                    }
-                }
-
-                kernelDefs[i] = new Kernel.EncounterDefinition(
-                    (int)encounter.correctMask,
-                    neutralBits
-                );
+            for (int i = 0; i < bossCount; i++)
+            {
+                kernelDefs[normalCount + i] = BuildDef(bossPool[i]);
             }
 
             kernelRules = new Kernel.GameRules(
@@ -55,7 +46,13 @@ namespace MaskGame.Managers
                 gameConfig.batteryPenalty
             );
 
-            kernelState = Kernel.GameKernel.NewGame(gameSeed, in kernelRules, kernelDefs.Length);
+            kernelState = Kernel.GameKernel.NewGame(
+                gameSeed,
+                in kernelRules,
+                normalCount,
+                bossCount,
+                startInBossMode
+            );
             KernelElo();
             KernelPull();
             kernelInit = true;
@@ -79,6 +76,22 @@ namespace MaskGame.Managers
             correctAnswers = kernelState.CorrectAnswers;
         }
 
+        private static Kernel.EncounterDefinition BuildDef(EncounterData encounter)
+        {
+            byte neutralBits = 0;
+            MaskType[] neutralMasks = encounter.neutralMasks;
+            if (neutralMasks != null)
+            {
+                for (int n = 0; n < neutralMasks.Length; n++)
+                {
+                    int maskIndex = (int)neutralMasks[n];
+                    neutralBits = (byte)(neutralBits | (1 << maskIndex));
+                }
+            }
+
+            return new Kernel.EncounterDefinition((int)encounter.correctMask, neutralBits);
+        }
+
         private bool KernelLoad()
         {
             if (!kernelOn || !kernelInit)
@@ -87,15 +100,37 @@ namespace MaskGame.Managers
                 return false;
 
             int encId = kernelState.EncId;
-            if (encId < 0 || encId >= kernelPool.Count)
+            if (kernelState.Mode == Kernel.GameMode.Boss && !bossMode)
+                KernelBossEnter();
+
+            if (kernelState.Mode == Kernel.GameMode.Normal)
             {
-                Debug.LogError(
-                    $"GameManager: kernel EncId out of range: id={encId} count={kernelPool.Count}"
-                );
-                return false;
+                List<EncounterData> pool = GetPool();
+                if (encId < 0 || encId >= pool.Count)
+                {
+                    Debug.LogError(
+                        $"GameManager: kernel EncId out of range: id={encId} count={pool.Count}"
+                    );
+                    return false;
+                }
+
+                currentEncounter = pool[encId];
+            }
+            else
+            {
+                List<EncounterData> bossPool = GetBossPool();
+                int local = encId - kernelState.NormalCount;
+                if (local < 0 || local >= bossPool.Count)
+                {
+                    Debug.LogError(
+                        $"GameManager: kernel EncId out of range: id={encId} count={bossPool.Count}"
+                    );
+                    return false;
+                }
+
+                currentEncounter = bossPool[local];
             }
 
-            currentEncounter = kernelPool[encId];
             SpawnNPC(currentEncounter);
 
             float baseTime = gameConfig.GetDecisionTime(currentDay);
@@ -112,6 +147,18 @@ namespace MaskGame.Managers
             OnTimeChanged.Invoke(remainingTime);
             state = GameState.Await;
             return true;
+        }
+
+        private void KernelBossEnter()
+        {
+            bossMode = true;
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossBGM();
+            }
+
+            OnBossModeStart.Invoke();
         }
 
         private void KernelAnswer(MaskType selectedMask, bool isTimeout)
@@ -151,7 +198,14 @@ namespace MaskGame.Managers
             OnAnswerResult.Invoke(outcome, feedbackText);
 
             if (outcome == AnswerOutcome.Correct)
+            {
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayRandomHitSound();
+                }
+
                 dailyCorrectAnswers++;
+            }
 
             int hpBefore = kernelState.Health;
             int idxBefore = kernelState.DayIdx;
@@ -196,21 +250,28 @@ namespace MaskGame.Managers
                 return;
             }
 
-            if (currentEncounterIndex >= GetCurrentDayEncounters())
-            {
-                CompleteDay();
-                return;
-            }
-
             if (kernelState.Phase == Kernel.GamePhase.GameWon)
             {
                 GameWin();
                 return;
             }
 
+            if (kernelState.Mode == Kernel.GameMode.Boss)
+            {
+                if (!KernelLoad())
+                    GameOver();
+                return;
+            }
+
+            if (kernelState.Phase == Kernel.GamePhase.WaitDay)
+            {
+                CompleteDay();
+                return;
+            }
+
             if (!KernelLoad())
             {
-                GameWin();
+                GameOver();
             }
         }
 

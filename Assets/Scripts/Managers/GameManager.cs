@@ -5,6 +5,7 @@ using MaskGame.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using Kernel = MaskGame.Simulation.Kernel;
 
 namespace MaskGame.Managers
 {
@@ -184,8 +185,10 @@ namespace MaskGame.Managers
 
             if (kernelOn && !KernelInit())
             {
-                GameWin();
-                return;
+                kernelOn = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                InitShadow();
+#endif
             }
 
             OnDayChanged.Invoke(currentDay);
@@ -194,7 +197,14 @@ namespace MaskGame.Managers
             if (kernelOn)
             {
                 if (!KernelLoad())
-                    GameWin();
+                {
+                    kernelOn = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    InitShadow();
+#endif
+                    ShuffleEncounters();
+                    LoadNextEncounter();
+                }
             }
             else
             {
@@ -704,8 +714,17 @@ namespace MaskGame.Managers
                 KernelAdvance();
                 OnDayChanged.Invoke(currentDay);
 
-                if (!KernelLoad())
+                if (kernelState.Phase == Kernel.GamePhase.GameWon)
+                {
                     GameWin();
+                    yield break;
+                }
+
+                if (!KernelLoad())
+                {
+                    GameOver();
+                    yield break;
+                }
 
                 yield break;
             }

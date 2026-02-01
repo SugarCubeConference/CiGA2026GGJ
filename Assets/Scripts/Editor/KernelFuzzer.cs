@@ -703,20 +703,34 @@ namespace MaskGame.Editor
         )
         {
             Kernel.GameRules rules = new Kernel.GameRules(
-                totalDays: 1,
+                totalDays: 999,
                 dayEnc: 1,
                 initialHealth: 1,
                 maxHealth: 1,
                 batteryPenalty: 1
             );
 
-            Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, encounters.Length);
-            int mask = encounters[state.EncId].CorrectMask;
+            Kernel.EncounterDefinition[] defs = { encounters[0] };
+            Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, defs.Length);
+            int mask = defs[state.EncId].CorrectMask;
             Kernel.GameKernel.Apply(
                 ref state,
                 Kernel.SimulationCommand.SelectMask(mask),
                 in rules,
-                encounters
+                defs
+            );
+
+            if (state.Phase != Kernel.GamePhase.WaitDay)
+            {
+                message = $"Win failed: expected WaitDay got={state.Phase}";
+                return false;
+            }
+
+            Kernel.GameKernel.Apply(
+                ref state,
+                Kernel.SimulationCommand.AdvanceDay(),
+                in rules,
+                defs
             );
 
             if (state.Phase != Kernel.GamePhase.GameWon)
@@ -1144,9 +1158,9 @@ namespace MaskGame.Editor
                 return false;
             }
 
-            if (state.CurrentDay < 1 || state.CurrentDay > rules.TotalDays)
+            if (state.CurrentDay < 1)
             {
-                message = $"Day out of range: day={state.CurrentDay} totalDays={rules.TotalDays}";
+                message = $"Day out of range: day={state.CurrentDay}";
                 return false;
             }
 
@@ -1170,7 +1184,7 @@ namespace MaskGame.Editor
                 return false;
             }
 
-            if (state.DayIdx != deckSize - state.DeckLeft)
+            if (state.Mode == Kernel.GameMode.Normal && state.DayIdx != deckSize - state.DeckLeft)
             {
                 message =
                     $"DayIdx mismatch: idx={state.DayIdx} expected={deckSize - state.DeckLeft}";
@@ -1191,10 +1205,9 @@ namespace MaskGame.Editor
 
             if (state.Phase == Kernel.GamePhase.GameWon)
             {
-                if (state.CurrentDay < rules.TotalDays && state.DeckSize >= rules.DayEnc)
+                if (state.DeckLeft != 0)
                 {
-                    message =
-                        $"GameWon before reaching totalDays: day={state.CurrentDay} totalDays={rules.TotalDays} deckSize={state.DeckSize} dayEnc={rules.DayEnc}";
+                    message = $"GameWon but DeckLeft != 0: remaining={state.DeckLeft}";
                     return false;
                 }
 
