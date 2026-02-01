@@ -246,8 +246,10 @@ namespace MaskGame.UI
         /// </summary>
         private void DisplayEncounter(EncounterData encounter)
         {
-            UnityEngine.Debug.Log($"=== DisplayEncounter 开始 === encounter={encounter?.name}, keywords='{encounter?.keywords}'");
-            
+            UnityEngine.Debug.Log(
+                $"=== DisplayEncounter 开始 === encounter={encounter?.name}, keywords='{encounter?.keywords}'"
+            );
+
             if (encounter == null)
                 return;
 

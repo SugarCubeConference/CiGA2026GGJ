@@ -7,11 +7,11 @@ namespace MaskGame.Data
     /// </summary>
     public enum SkillType
     {
-        Battery,        // 电池 - 增加20%回答时长
-        Meditation,     // 凝神定气 - 回复一条命
-        QuickThinking,  // 思维敏捷 - 关键词再次显示
-        Eloquence,      // 妙语连珠 - 选错时获得额外机会
-        InnerDeduction  // 内心推演 - 将一个错误选项标红
+        Battery, // 电池 - 增加20%回答时长
+        Meditation, // 凝神定气 - 回复一条命
+        QuickThinking, // 思维敏捷 - 关键词再次显示
+        Eloquence, // 妙语连珠 - 选错时获得额外机会
+        InnerDeduction, // 内心推演 - 将一个错误选项标红
     }
 
     /// <summary>

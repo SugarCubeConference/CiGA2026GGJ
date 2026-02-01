@@ -60,7 +60,11 @@ namespace MaskGame.UI
             if (tooltipText != null)
             {
                 float targetScale = isTextHovering ? textHoverScale : 1f;
-                currentTextScale = Mathf.Lerp(currentTextScale, targetScale, Time.deltaTime * textScaleSpeed);
+                currentTextScale = Mathf.Lerp(
+                    currentTextScale,
+                    targetScale,
+                    Time.deltaTime * textScaleSpeed
+                );
                 tooltipText.transform.localScale = Vector3.one * currentTextScale;
             }
         }

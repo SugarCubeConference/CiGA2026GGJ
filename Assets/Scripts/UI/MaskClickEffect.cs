@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace MaskGame.UI
 {
@@ -36,12 +36,12 @@ namespace MaskGame.UI
             // 创建特效GameObject
             effectObject = new GameObject("ClickEffect");
             effectObject.transform.SetParent(transform, false);
-            
+
             RectTransform effectRect = effectObject.AddComponent<RectTransform>();
             effectRect.anchoredPosition = effectOffset;
             effectRect.localScale = Vector3.one * effectScale;
             effectRect.sizeDelta = new Vector2(100, 100); // 默认大小，会根据sprite调整
-            
+
             effectImage = effectObject.AddComponent<Image>();
             effectImage.raycastTarget = false; // 不阻挡点击
             effectObject.SetActive(false);
@@ -80,14 +80,17 @@ namespace MaskGame.UI
             for (int i = 0; i < effectSprites.Length; i++)
             {
                 effectImage.sprite = effectSprites[i];
-                
+
                 // 根据sprite调整大小保持长宽比
                 if (effectSprites[i] != null)
                 {
                     RectTransform rect = effectImage.rectTransform;
-                    rect.sizeDelta = new Vector2(effectSprites[i].rect.width, effectSprites[i].rect.height);
+                    rect.sizeDelta = new Vector2(
+                        effectSprites[i].rect.width,
+                        effectSprites[i].rect.height
+                    );
                 }
-                
+
                 yield return new WaitForSeconds(frameTime);
             }
 

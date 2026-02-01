@@ -6,4 +6,3 @@ namespace MaskGame.Simulation
         public const uint Skills = 0x534B494Cu;
     }
 }
-

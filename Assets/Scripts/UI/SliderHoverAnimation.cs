@@ -55,7 +55,8 @@ namespace MaskGame.UI
 
         private void Update()
         {
-            if (!isAnimating) return;
+            if (!isAnimating)
+                return;
 
             currentTime += Time.unscaledDeltaTime;
             float progress = Mathf.Clamp01(currentTime / animationDuration);

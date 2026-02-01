@@ -191,7 +191,11 @@ namespace MaskGame.UI
             textComponent.maxVisibleCharacters = int.MaxValue;
             isTyping = false;
 
-            if (enableFloatingEffect && floatingCoroutine == null && floatingCharacterIndices.Count > 0)
+            if (
+                enableFloatingEffect
+                && floatingCoroutine == null
+                && floatingCharacterIndices.Count > 0
+            )
             {
                 floatingCoroutine = StartCoroutine(FloatingEffectCoroutine());
             }

@@ -11,8 +11,10 @@ namespace MaskGame.Rendering
         {
             public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
             public Material material;
+
             [Range(1, 20)]
             public float dotSize = 5f;
+
             [Range(0, 1)]
             public float dotIntensity = 0.5f;
         }
@@ -27,11 +29,14 @@ namespace MaskGame.Rendering
                 Debug.LogWarning("HalftoneRenderFeature: Material is not assigned!");
                 return;
             }
-            
+
             renderPass = new HalftoneRenderPass(settings);
         }
 
-        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+        public override void AddRenderPasses(
+            ScriptableRenderer renderer,
+            ref RenderingData renderingData
+        )
         {
             if (renderPass != null && settings.material != null)
             {
@@ -54,13 +59,19 @@ namespace MaskGame.Rendering
                 tempTexture.Init("_TempHalftoneTexture");
             }
 
-            public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+            public override void Execute(
+                ScriptableRenderContext context,
+                ref RenderingData renderingData
+            )
             {
-                if (material == null) return;
+                if (material == null)
+                    return;
 
                 CommandBuffer cmd = CommandBufferPool.Get("HalftoneEffect");
 
-                RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
+                RenderTextureDescriptor descriptor = renderingData
+                    .cameraData
+                    .cameraTargetDescriptor;
                 descriptor.depthBufferBits = 0;
 
                 // 更新shader参数
@@ -68,7 +79,10 @@ namespace MaskGame.Rendering
                 material.SetFloat("_DotIntensity", settings.dotIntensity);
 
                 // 获取相机渲染目标
-                RenderTargetIdentifier cameraTarget = renderingData.cameraData.renderer.cameraColorTarget;
+                RenderTargetIdentifier cameraTarget = renderingData
+                    .cameraData
+                    .renderer
+                    .cameraColorTarget;
 
                 // 创建临时纹理
                 cmd.GetTemporaryRT(tempTexture.id, descriptor);

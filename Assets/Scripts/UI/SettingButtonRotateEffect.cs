@@ -6,7 +6,10 @@ namespace MaskGame.UI
     /// <summary>
     /// 设置按钮旋转动画 - 鼠标悬停时持续旋转
     /// </summary>
-    public class SettingButtonRotateEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class SettingButtonRotateEffect
+        : MonoBehaviour,
+            IPointerEnterHandler,
+            IPointerExitHandler
     {
         [Header("旋转设置")]
         [SerializeField]
