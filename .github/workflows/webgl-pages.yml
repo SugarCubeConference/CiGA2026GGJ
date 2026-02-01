@@ -22,6 +22,11 @@ jobs:
         with:
           lfs: true
       - uses: actions/configure-pages@v5
+      - name: Prepare CI home
+        run: |
+          set -euo pipefail
+          mkdir -p .cihome/.config
+          chmod -R a+rwX .cihome
       - uses: actions/cache@v4
         with:
           path: Library
@@ -31,6 +36,8 @@ jobs:
             Library-
       - uses: game-ci/unity-builder@v4
         env:
+          HOME: /github/workspace/.cihome
+          XDG_CONFIG_HOME: /github/workspace/.cihome/.config
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -39,6 +46,17 @@ jobs:
           unityVersion: 2022.3.22f1
           targetPlatform: WebGL
           customParameters: -logFile Editor.log -timestamps
+      - name: Fix workspace permissions
+        if: always()
+        run: |
+          set -euo pipefail
+          OWNER="$(id -un)"
+          GROUP="$(id -gn)"
+          for d in Logs Temp UserSettings build; do
+            if [ -d "${d}" ]; then
+              sudo chown -R "${OWNER}:${GROUP}" "${d}" || true
+            fi
+          done
       - name: Locate WebGL output
         run: |
           set -euo pipefail
