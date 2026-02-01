@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment:
       name: unity-ci
     steps:
@@ -30,6 +30,7 @@ jobs:
             Library-WebGL-
             Library-
       - uses: game-ci/unity-builder@v4
+        continue-on-error: true
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -38,6 +39,7 @@ jobs:
           projectPath: .
           unityVersion: 2022.3.22f1
           targetPlatform: WebGL
+          customParameters: -logFile /github/workspace/Editor.log -timestamps
       - name: Locate WebGL output
         run: |
           set -euo pipefail
@@ -49,6 +51,13 @@ jobs:
           fi
           touch "${PAGE_DIR}/.nojekyll"
           echo "PAGE_DIR=${PAGE_DIR}" >> "${GITHUB_ENV}"
+      - name: Upload Unity logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-logs
+          path: |
+            Editor.log
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.PAGE_DIR }}
