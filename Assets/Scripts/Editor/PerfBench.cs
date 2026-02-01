@@ -561,12 +561,6 @@ namespace MaskGame.Editor
                     return;
                 }
 
-                if (day > rules.TotalDays)
-                {
-                    phase = 2;
-                    return;
-                }
-
                 deck.Clear();
                 List<int> avail = new List<int>(encData.Length);
                 for (int i = 0; i < encData.Length; i++)
