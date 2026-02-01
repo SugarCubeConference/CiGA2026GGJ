@@ -3,14 +3,14 @@ using MaskGame.Simulation;
 
 namespace MaskGame.Simulation.Kernel
 {
-    public static class GameKernel
-    {
-        private const ulong Fnv64Offset = 14695981039346656037UL;
-        private const ulong Fnv64Prime = 1099511628211UL;
+	public static class GameKernel
+	{
+		private const ulong Fnv1a64Offset = 14695981039346656037UL;
+		private const ulong Fnv1a64Prime = 1099511628211UL;
 
         public static GameState NewGame(uint seed, in GameRules rules, int encounterCount)
         {
-            int deckSize = Math.Min(rules.DayEnc, encounterCount);
+            int deckCap = Math.Min(rules.DayEnc, encounterCount);
             GameState state = new GameState
             {
                 Seed = seed,
@@ -23,11 +23,14 @@ namespace MaskGame.Simulation.Kernel
                 HasElo = 0,
                 EloUsed = 0,
                 Phase = GamePhase.WaitAns,
-                DayDeck = new int[deckSize],
+                UsedCount = 0,
+                UsedBits = new uint[(encounterCount + 31) / 32],
+                DayDeck = new int[deckCap],
+                DeckSize = 0,
                 PoolScratch = new int[encounterCount],
             };
 
-            BeginDay(ref state, deckSize);
+            BeginDay(ref state);
             return state;
         }
 
@@ -58,9 +61,9 @@ namespace MaskGame.Simulation.Kernel
             }
         }
 
-        public static ulong HashState(in GameState state)
-        {
-            ulong hash = Fnv64Offset;
+		public static ulong HashState(in GameState state)
+		{
+			ulong hash = Fnv1a64Offset;
             Mix(ref hash, state.Seed);
             Mix(ref hash, (uint)state.CurrentDay);
             Mix(ref hash, (uint)state.DayIdx);
@@ -72,12 +75,20 @@ namespace MaskGame.Simulation.Kernel
             Mix(ref hash, state.HasElo);
             Mix(ref hash, state.EloUsed);
             Mix(ref hash, (uint)state.Phase);
+            Mix(ref hash, (uint)state.UsedCount);
+            Mix(ref hash, (uint)state.DeckSize);
             Mix(ref hash, (uint)state.DeckLeft);
 
             int[] deck = state.DayDeck;
-            for (int i = 0; i < deck.Length; i++)
+            for (int i = 0; i < state.DeckSize; i++)
             {
                 Mix(ref hash, (uint)deck[i]);
+            }
+
+            uint[] usedBits = state.UsedBits;
+            for (int i = 0; i < usedBits.Length; i++)
+            {
+                Mix(ref hash, usedBits[i]);
             }
 
             return hash;
@@ -90,8 +101,7 @@ namespace MaskGame.Simulation.Kernel
 
             state.CurrentDay++;
             state.DayIdx = 0;
-            state.Phase = GamePhase.WaitAns;
-            BeginDay(ref state, state.DayDeck.Length);
+            BeginDay(ref state);
         }
 
         private static void ApplyAnswer(
@@ -138,43 +148,58 @@ namespace MaskGame.Simulation.Kernel
             if (state.DeckLeft > 0)
             {
                 state.EncId = state.DayDeck[state.DeckLeft - 1];
+                MarkUsed(ref state, state.EncId);
                 state.EloUsed = 0;
                 return;
             }
 
-            if (state.CurrentDay >= rules.TotalDays)
-            {
-                state.Phase = GamePhase.GameWon;
-            }
-            else
-            {
-                state.Phase = GamePhase.WaitDay;
-            }
+            state.Phase =
+                state.CurrentDay >= rules.TotalDays || state.DeckSize < rules.DayEnc
+                    ? GamePhase.GameWon
+                    : GamePhase.WaitDay;
         }
 
-        private static void BeginDay(ref GameState state, int deckSize)
+        private static void BeginDay(ref GameState state)
         {
-            int[] pool = state.PoolScratch;
-            for (int i = 0; i < pool.Length; i++)
+            int[] scratch = state.PoolScratch;
+            int encCount = scratch.Length;
+            int availCount = 0;
+            for (int i = 0; i < encCount; i++)
             {
-                pool[i] = i;
+                if (!IsUsed(in state, i))
+                {
+                    scratch[availCount] = i;
+                    availCount++;
+                }
             }
 
-            for (int i = pool.Length - 1; i > 0; i--)
+            if (availCount <= 0)
+            {
+                state.DeckSize = 0;
+                state.DeckLeft = 0;
+                state.Phase = GamePhase.GameWon;
+                return;
+            }
+
+            for (int i = availCount - 1; i > 0; i--)
             {
                 int j = state.EncounterRng.NextInt(0, i + 1);
-                int tmp = pool[i];
-                pool[i] = pool[j];
-                pool[j] = tmp;
+                int tmp = scratch[i];
+                scratch[i] = scratch[j];
+                scratch[j] = tmp;
             }
 
+            int deckSize = Math.Min(state.DayDeck.Length, availCount);
             for (int i = 0; i < deckSize; i++)
             {
-                state.DayDeck[i] = pool[i];
+                state.DayDeck[i] = scratch[i];
             }
 
+            state.DeckSize = deckSize;
             state.DeckLeft = deckSize;
-            state.EncId = state.DayDeck[state.DeckLeft - 1];
+            state.Phase = GamePhase.WaitAns;
+            state.EncId = state.DayDeck[deckSize - 1];
+            MarkUsed(ref state, state.EncId);
             state.EloUsed = 0;
         }
 
@@ -194,10 +219,30 @@ namespace MaskGame.Simulation.Kernel
             }
         }
 
-        private static void Mix(ref ulong hash, uint value)
+		private static void Mix(ref ulong hash, uint value)
+		{
+			hash ^= value;
+			hash *= Fnv1a64Prime;
+		}
+
+        private static bool IsUsed(in GameState state, int id)
         {
-            hash ^= value;
-            hash *= Fnv64Prime;
+            uint[] bits = state.UsedBits;
+            int word = id >> 5;
+            uint mask = 1u << (id & 31);
+            return (bits[word] & mask) != 0;
+        }
+
+        private static void MarkUsed(ref GameState state, int id)
+        {
+            uint[] bits = state.UsedBits;
+            int word = id >> 5;
+            uint mask = 1u << (id & 31);
+            if ((bits[word] & mask) != 0)
+                return;
+
+            bits[word] |= mask;
+            state.UsedCount++;
         }
     }
 }

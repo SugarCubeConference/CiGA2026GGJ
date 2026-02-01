@@ -8,15 +8,23 @@ using UnityEngine;
 
 namespace MaskGame.Editor
 {
-    public static class KernelFuzzer
-    {
-        private const string MenuRoot = "Tools/Mask Game/Kernel Fuzzer/";
-        private const string EncounterRes = "Encounters";
-        private const int MaskCount = 4;
-        private const uint FuzzStream = 0x46555A5Au; // "FUZZ"
-        private const string FailKey = "MaskGame.KernelFuzzer.LastFailureSeed";
-        private const uint Fnv32Offset = 2166136261u;
-        private const uint Fnv32Prime = 16777619u;
+	    public static class KernelFuzzer
+	    {
+	        private const string MenuRoot = "Tools/Mask Game/Kernel Fuzzer/";
+	        private const string EncounterRes = "Encounters";
+	        private const int MaskCount = 4;
+	        private const uint FuzzStream = 0x46555A5Au; // "FUZZ"
+	        private const string FailKey = "MaskGame.KernelFuzzer.LastFailureSeed";
+	        private const int FastSeeds = 200;
+	        private const int FastSteps = 512;
+	        private const int ThoroughSeeds = 5000;
+	        private const int ThoroughSteps = 4096;
+	        private const int ReproSteps = 16384;
+	        private const int TraceCap = 64;
+	        private const int ProgStride = 64;
+	        private const int GuardPad = 8;
+	        private const uint Fnv32Offset = 2166136261u;
+	        private const uint Fnv32Prime = 16777619u;
 
         private readonly struct Settings
         {
@@ -73,34 +81,34 @@ namespace MaskGame.Editor
         }
 
         [MenuItem(MenuRoot + "Run (Fast)")]
-        public static void RunFast()
-        {
-            Run(
-                new Settings(
-                    seeds: 200,
-                    maxStep: 512,
-                    failFast: true,
-                    verifyReplay: false,
-                    includeHeal: true,
-                    includeEloquence: true
-                )
-            );
-        }
+	        public static void RunFast()
+	        {
+	            Run(
+	                new Settings(
+	                    seeds: FastSeeds,
+	                    maxStep: FastSteps,
+	                    failFast: true,
+	                    verifyReplay: false,
+	                    includeHeal: true,
+	                    includeEloquence: true
+	                )
+	            );
+	        }
 
         [MenuItem(MenuRoot + "Run (Thorough)")]
-        public static void RunThorough()
-        {
-            Run(
-                new Settings(
-                    seeds: 5000,
-                    maxStep: 4096,
-                    failFast: false,
-                    verifyReplay: true,
-                    includeHeal: true,
-                    includeEloquence: true
-                )
-            );
-        }
+	        public static void RunThorough()
+	        {
+	            Run(
+	                new Settings(
+	                    seeds: ThoroughSeeds,
+	                    maxStep: ThoroughSteps,
+	                    failFast: false,
+	                    verifyReplay: true,
+	                    includeHeal: true,
+	                    includeEloquence: true
+	                )
+	            );
+	        }
 
         [MenuItem(MenuRoot + "Repro Last Failure", true)]
         private static bool CanRepro()
@@ -135,15 +143,15 @@ namespace MaskGame.Editor
 
             try
             {
-                for (int i = 0; i < settings.Seeds; i++)
-                {
-                    uint seed = seedRng.NextUInt();
-                    if (showProgress && i % 64 == 0)
-                    {
-                        EditorUtility.DisplayProgressBar(
-                            "Kernel Fuzzer",
-                            $"Running seed {i + 1}/{settings.Seeds}",
-                            (float)i / settings.Seeds
+	                for (int i = 0; i < settings.Seeds; i++)
+	                {
+	                    uint seed = seedRng.NextUInt();
+	                    if (showProgress && i % ProgStride == 0)
+	                    {
+	                        EditorUtility.DisplayProgressBar(
+	                            "Kernel Fuzzer",
+	                            $"Running seed {i + 1}/{settings.Seeds}",
+	                            (float)i / settings.Seeds
                         );
                     }
 
@@ -178,12 +186,12 @@ namespace MaskGame.Editor
             if (!BuildInput(out Kernel.GameRules rules, out Kernel.EncounterDefinition[] encounters))
                 return;
 
-            Settings settings = new Settings(
-                seeds: 1,
-                maxStep: 16384,
-                failFast: true,
-                verifyReplay: true,
-                includeHeal: true,
+	            Settings settings = new Settings(
+	                seeds: 1,
+	                maxStep: ReproSteps,
+	                failFast: true,
+	                verifyReplay: true,
+	                includeHeal: true,
                 includeEloquence: true
             );
 
@@ -283,10 +291,9 @@ namespace MaskGame.Editor
             if (!TryEdge(seed, in rules, encounters, out failure))
                 return false;
 
-            const int TraceCapacity = 64;
-            Kernel.SimulationCommand[] trace = new Kernel.SimulationCommand[TraceCapacity];
-            int traceWrite = 0;
-            int traceCount = 0;
+	            Kernel.SimulationCommand[] trace = new Kernel.SimulationCommand[TraceCap];
+	            int traceWrite = 0;
+	            int traceCount = 0;
 
             Kernel.GameState state = Kernel.GameKernel.NewGame(seed, in rules, encounters.Length);
             DeterministicRng driverRng = DeterministicRng.Create(seed, FuzzStream);
@@ -299,9 +306,9 @@ namespace MaskGame.Editor
                 Kernel.SimulationCommand command = GenerateCommand(ref driverRng, in state, in settings);
 
                 trace[traceWrite] = command;
-                traceWrite = (traceWrite + 1) % TraceCapacity;
-                if (traceCount < TraceCapacity)
-                    traceCount++;
+	                traceWrite = (traceWrite + 1) % TraceCap;
+	                if (traceCount < TraceCap)
+	                    traceCount++;
 
                 uint rngPrev = state.EncounterRng.State;
                 Kernel.GameKernel.Apply(ref state, in command, in rules, encounters);
@@ -467,7 +474,7 @@ namespace MaskGame.Editor
             out string message
         )
         {
-            if (rules.TotalDays <= 1)
+            if (rules.TotalDays <= 1 || encounters.Length <= rules.DayEnc)
             {
                 message = string.Empty;
                 return true;
@@ -501,15 +508,15 @@ namespace MaskGame.Editor
                 return false;
             }
 
-            int[] deckA = a.DayDeck;
-            int[] deckB = b.DayDeck;
-            if (deckA.Length != deckB.Length)
+            if (a.DeckSize != b.DeckSize)
             {
-                message = $"DeckInd failed: deck size mismatch a={deckA.Length} b={deckB.Length}";
+                message = $"DeckInd failed: deck size mismatch a={a.DeckSize} b={b.DeckSize}";
                 return false;
             }
 
-            for (int i = 0; i < deckA.Length; i++)
+            int[] deckA = a.DayDeck;
+            int[] deckB = b.DayDeck;
+            for (int i = 0; i < a.DeckSize; i++)
             {
                 if (deckA[i] != deckB[i])
                 {
@@ -590,11 +597,11 @@ namespace MaskGame.Editor
             int days = rules.TotalDays < 5 ? rules.TotalDays : 5;
             for (int d = 0; d < days; d++)
             {
-                int guard = state.DayDeck.Length + 8;
-                for (int i = 0; i < guard && state.Phase == Kernel.GamePhase.WaitAns; i++)
-                {
-                    int mask = encounters[state.EncId].CorrectMask;
-                    Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
+	                int guard = state.DayDeck.Length + GuardPad;
+	                for (int i = 0; i < guard && state.Phase == Kernel.GamePhase.WaitAns; i++)
+	                {
+	                    int mask = encounters[state.EncId].CorrectMask;
+	                    Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
                 }
 
                 if (state.Phase == Kernel.GamePhase.WaitAns)
@@ -616,6 +623,12 @@ namespace MaskGame.Editor
                 }
 
                 Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.AdvanceDay(), in rules, encounters);
+                if (state.Phase == Kernel.GamePhase.GameWon)
+                {
+                    message = string.Empty;
+                    return true;
+                }
+
                 if (state.Phase != Kernel.GamePhase.WaitAns)
                 {
                     message = $"Days failed: expected WaitAns after AdvanceDay got={state.Phase}";
@@ -665,11 +678,11 @@ namespace MaskGame.Editor
             out string message
         )
         {
-            int guard = state.DayDeck.Length + 8;
-            for (int i = 0; i < guard && state.Phase == Kernel.GamePhase.WaitAns; i++)
-            {
-                int encId = state.EncId;
-                int mask = encounters[encId].CorrectMask;
+	            int guard = state.DayDeck.Length + GuardPad;
+	            for (int i = 0; i < guard && state.Phase == Kernel.GamePhase.WaitAns; i++)
+	            {
+	                int encId = state.EncId;
+	                int mask = encounters[encId].CorrectMask;
                 Kernel.GameKernel.Apply(ref state, Kernel.SimulationCommand.SelectMask(mask), in rules, encounters);
             }
 
@@ -796,13 +809,19 @@ namespace MaskGame.Editor
                 return false;
             }
 
-            if (state.DayDeck == null || state.PoolScratch == null)
+            if (state.DayDeck == null || state.PoolScratch == null || state.UsedBits == null)
             {
                 message = "Internal arrays are null.";
                 return false;
             }
 
-            int deckSize = state.DayDeck.Length;
+            int deckSize = state.DeckSize;
+            if (deckSize < 0 || deckSize > state.DayDeck.Length)
+            {
+                message = $"DeckSize out of range: size={deckSize} cap={state.DayDeck.Length}";
+                return false;
+            }
+
             if (state.DeckLeft < 0 || state.DeckLeft > deckSize)
             {
                 message = $"Deck remaining out of range: remaining={state.DeckLeft} deckSize={deckSize}";
@@ -830,9 +849,9 @@ namespace MaskGame.Editor
 
             if (state.Phase == Kernel.GamePhase.GameWon)
             {
-                if (state.CurrentDay < rules.TotalDays)
+                if (state.CurrentDay < rules.TotalDays && state.DeckSize >= rules.DayEnc)
                 {
-                    message = $"GameWon before reaching totalDays: day={state.CurrentDay} totalDays={rules.TotalDays}";
+                    message = $"GameWon before reaching totalDays: day={state.CurrentDay} totalDays={rules.TotalDays} deckSize={state.DeckSize} dayEnc={rules.DayEnc}";
                     return false;
                 }
 

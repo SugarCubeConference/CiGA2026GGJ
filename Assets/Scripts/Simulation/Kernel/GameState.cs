@@ -24,7 +24,11 @@ namespace MaskGame.Simulation.Kernel
         public byte EloUsed;
         public GamePhase Phase;
 
+        public int UsedCount;
+        public uint[] UsedBits;
+
         public int[] DayDeck;
+        public int DeckSize;
         public int DeckLeft;
         public int[] PoolScratch;
     }
