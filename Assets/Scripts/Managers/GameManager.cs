@@ -54,8 +54,13 @@ namespace MaskGame.Managers
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
+        private const string BossEncounterRes = "Boss";
         private List<EncounterData> dayPool = new List<EncounterData>();
         private List<EncounterData> usedEncounters = new List<EncounterData>(); // 已使用的encounters
+        private List<EncounterData> bossPool = new List<EncounterData>();
+        private List<EncounterData> usedBossEncounters = new List<EncounterData>();
+        private bool bossResLoaded;
+        private bool bossMode;
         private uint gameSeed;
         private DeterministicRng encounterRng;
 
@@ -146,6 +151,10 @@ namespace MaskGame.Managers
             correctAnswers = 0;
             dailyCorrectAnswers = 0;
             usedEncounters.Clear(); // 清空已使用encounters
+            usedBossEncounters.Clear();
+            bossPool.Clear();
+            bossResLoaded = false;
+            bossMode = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             InitShadow();
 #endif
@@ -221,6 +230,31 @@ namespace MaskGame.Managers
             return dayPool;
         }
 
+        private List<EncounterData> GetBossPool()
+        {
+            if (bossPool.Count > 0 || bossResLoaded)
+                return bossPool;
+
+            bossResLoaded = true;
+            EncounterData[] loaded = Resources.LoadAll<EncounterData>(BossEncounterRes);
+            System.Array.Sort(
+                loaded,
+                (a, b) =>
+                    string.CompareOrdinal(
+                        a != null ? a.name : string.Empty,
+                        b != null ? b.name : string.Empty
+                    )
+            );
+
+            bossPool.Clear();
+            if (loaded != null && loaded.Length > 0)
+            {
+                bossPool.AddRange(loaded);
+            }
+
+            return bossPool;
+        }
+
         /// <summary>
         /// 获取当前天的对话数量（固定值）
         /// </summary>
@@ -234,14 +268,15 @@ namespace MaskGame.Managers
         /// </summary>
         private void ShuffleEncounters()
         {
-            List<EncounterData> pool = GetPool();
+            List<EncounterData> pool = bossMode ? GetBossPool() : GetPool();
             shuffledEncounters.Clear();
 
             // 创建未使用的encounters列表
             List<EncounterData> availablePool = new List<EncounterData>();
+            List<EncounterData> usedPool = bossMode ? usedBossEncounters : usedEncounters;
             for (int i = 0; i < pool.Count; i++)
             {
-                if (!usedEncounters.Contains(pool[i]))
+                if (!usedPool.Contains(pool[i]))
                 {
                     availablePool.Add(pool[i]);
                 }
@@ -250,8 +285,25 @@ namespace MaskGame.Managers
             // 如果没有可用的encounters了，检查是否完成游戏
             if (availablePool.Count == 0)
             {
-                UnityEngine.Debug.Log("所有encounters已用完，游戏胜利！");
-                GameWin();
+                if (bossMode)
+                {
+                    UnityEngine.Debug.Log("所有BOSS encounters已用完，游戏胜利！");
+                    GameWin();
+                }
+                else
+                {
+                    UnityEngine.Debug.Log("普通encounters已用完，进入BOSS战！");
+                    bossMode = true;
+                    usedBossEncounters.Clear();
+                    
+                    // 切换BOSS BGM
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayBossBGM();
+                    }
+                    
+                    ShuffleEncounters();
+                }
                 return;
             }
 
@@ -299,7 +351,14 @@ namespace MaskGame.Managers
             shuffledEncounters.RemoveAt(lastIndex);
 
             // 标记为已使用
-            if (!usedEncounters.Contains(currentEncounter))
+            if (bossMode)
+            {
+                if (!usedBossEncounters.Contains(currentEncounter))
+                {
+                    usedBossEncounters.Add(currentEncounter);
+                }
+            }
+            else if (!usedEncounters.Contains(currentEncounter))
             {
                 usedEncounters.Add(currentEncounter);
             }
@@ -419,7 +478,8 @@ namespace MaskGame.Managers
                 }
 
                 // 选错或超时 - 扣除社交电池
-                socialBattery -= gameConfig.batteryPenalty;
+                int penalty = bossMode ? 2 : gameConfig.batteryPenalty;
+                socialBattery -= penalty;
                 OnBatteryChanged.Invoke(socialBattery);
 
                 if (socialBattery <= 0)
@@ -427,6 +487,13 @@ namespace MaskGame.Managers
                     GameOver();
                     return;
                 }
+            }
+
+            if (bossMode)
+            {
+                // BOSS战不走天数逻辑，直接进入下一段对话
+                LoadNextEncounter();
+                return;
             }
 
             // 检查是否完成当前天

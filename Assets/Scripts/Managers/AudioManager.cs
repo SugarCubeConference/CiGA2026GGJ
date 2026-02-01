@@ -15,6 +15,16 @@ namespace MaskGame.Managers
         [Tooltip("AudioMixer资源，如果不使用可留空")]
         private AudioMixer audioMixer;
 
+        [Header("BGM设置")]
+        [SerializeField]
+        private AudioSource bgmSource;
+
+        [SerializeField]
+        private AudioClip normalBGM;
+
+        [SerializeField]
+        private AudioClip bossBGM;
+
         [Header("音量设置")]
         [SerializeField]
         [Range(0f, 1f)]
@@ -165,6 +175,32 @@ namespace MaskGame.Managers
             SetMasterVolume(1f);
             SetMusicVolume(1f);
             SetSFXVolume(1f);
+        }
+
+        /// <summary>
+        /// 播放BOSS战BGM
+        /// </summary>
+        public void PlayBossBGM()
+        {
+            if (bgmSource != null && bossBGM != null)
+            {
+                bgmSource.clip = bossBGM;
+                bgmSource.loop = true;
+                bgmSource.Play();
+            }
+        }
+
+        /// <summary>
+        /// 播放普通BGM
+        /// </summary>
+        public void PlayNormalBGM()
+        {
+            if (bgmSource != null && normalBGM != null)
+            {
+                bgmSource.clip = normalBGM;
+                bgmSource.loop = true;
+                bgmSource.Play();
+            }
         }
     }
 }

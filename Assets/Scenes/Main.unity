@@ -952,6 +952,7 @@ MonoBehaviour:
   OnShowSkillSelection:
     m_PersistentCalls:
       m_Calls: []
+  shadowOn: 1
 --- !u!4 &283705424
 Transform:
   m_ObjectHideFlags: 0
@@ -5770,6 +5771,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioMixer: {fileID: 0}
+  bgmSource: {fileID: 0}
+  normalBGM: {fileID: 8300000, guid: ec6d598406764964091f88b9bcb31673, type: 3}
+  bossBGM: {fileID: 8300000, guid: 97c9effecebd4dd4eacad8d047f1ead6, type: 3}
   masterVolume: 1
   musicVolume: 1
   sfxVolume: 1
