@@ -886,8 +886,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fddd39d799a3287478f6d0cb790adae6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  saveKey: Tutorial_Shown
-  allowReset: 1
 --- !u!114 &186405399
 MonoBehaviour:
   m_ObjectHideFlags: 0
