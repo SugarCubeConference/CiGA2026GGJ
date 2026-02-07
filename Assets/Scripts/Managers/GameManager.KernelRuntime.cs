@@ -229,6 +229,8 @@ namespace MaskGame.Managers
                 && eloBefore == 0
                 && kernelState.EloUsed == 1;
 
+            KernelPull();
+
             if (eloTriggered)
             {
                 if (SkillManager.Instance != null)
@@ -238,8 +240,6 @@ namespace MaskGame.Managers
                 state = GameState.Await;
                 return;
             }
-
-            KernelPull();
 
             if (socialBattery != hpBefore)
                 OnBatteryChanged.Invoke(socialBattery);
