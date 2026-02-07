@@ -5,6 +5,7 @@ using MaskGame.Simulation;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using Kernel = MaskGame.Simulation.Kernel;
 
 namespace MaskGame.Managers
 {
@@ -59,6 +60,8 @@ namespace MaskGame.Managers
         private List<EncounterData> encounterPool = new List<EncounterData>();
         private bool resLoaded;
         private const string EncounterRes = "Encounters";
+        private const string TimeoutFeedback = "干嘛不说话！";
+        private const string EloSuffix = "\n妙语连珠生效！再试一次";
         private const string BossEncounterRes = "Boss";
         private List<EncounterData> dayPool = new List<EncounterData>();
         private List<EncounterData> usedEncounters = new List<EncounterData>(); // 已使用的encounters
@@ -161,13 +164,13 @@ namespace MaskGame.Managers
             usedBossEncounters.Clear();
             bossPool.Clear();
             bossResLoaded = false;
-            
+
             // 调试：直接进入BOSS模式
             if (startInBossMode)
             {
                 bossMode = true;
                 isPaused = false; // 调试模式直接开始，不等待教程
-                
+
                 // 触发BOSS模式开始事件
                 OnBossModeStart.Invoke();
             }
@@ -176,14 +179,38 @@ namespace MaskGame.Managers
                 bossMode = false;
             }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            InitShadow(); // 在bossMode设置之后初始化shadow，确保使用正确的pool
+            if (!kernelOn)
+                InitShadow(); // 在bossMode设置之后初始化shadow，确保使用正确的pool
 #endif
+
+            if (kernelOn && !KernelInit())
+            {
+                kernelOn = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                InitShadow();
+#endif
+            }
 
             OnDayChanged.Invoke(currentDay);
             OnBatteryChanged.Invoke(socialBattery);
 
-            ShuffleEncounters();
-            LoadNextEncounter();
+            if (kernelOn)
+            {
+                if (!KernelLoad())
+                {
+                    kernelOn = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    InitShadow();
+#endif
+                    ShuffleEncounters();
+                    LoadNextEncounter();
+                }
+            }
+            else
+            {
+                ShuffleEncounters();
+                LoadNextEncounter();
+            }
 
             // 在所有初始化完成后切换BGM（使用协程延迟确保AudioManager已准备好）
             if (startInBossMode)
@@ -192,7 +219,8 @@ namespace MaskGame.Managers
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            CheckShadow("init");
+            if (!kernelOn)
+                CheckShadow("init");
 #endif
         }
 
@@ -358,21 +386,21 @@ namespace MaskGame.Managers
             bossMode = true;
             currentEncounterIndex = 0;
             usedBossEncounters.Clear();
-            
+
             // 切换BOSS BGM
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayBossBGM();
             }
-            
+
             // 触发BOSS模式开始事件
             OnBossModeStart.Invoke();
-            
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // 更新kernel shadow到BOSS模式
-            InitShadow();
+            if (!kernelOn)
+                InitShadow();
 #endif
-            
             // 重新洗牌并加载BOSS encounter
             ShuffleEncounters();
             if (shuffledEncounters.Count > 0)
@@ -471,15 +499,22 @@ namespace MaskGame.Managers
 
             state = GameState.Resolve;
 
+            if (kernelOn)
+            {
+                KernelAnswer(selectedMask, isTimeout);
+            }
+            else
+            {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            ShadowAnswer(selectedMask, isTimeout);
+                ShadowAnswer(selectedMask, isTimeout);
 #endif
 
-            ProcessAnswer(selectedMask, isTimeout);
+                ProcessAnswer(selectedMask, isTimeout);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            CheckShadow("answer");
+                CheckShadow("answer");
 #endif
+            }
         }
 
         /// <summary>
@@ -524,7 +559,7 @@ namespace MaskGame.Managers
             }
             else if (isTimeout)
             {
-                feedbackText = "干嘛不说话！";
+                feedbackText = TimeoutFeedback;
             }
 
             OnAnswerResult.Invoke(outcome, feedbackText);
@@ -546,10 +581,7 @@ namespace MaskGame.Managers
                 // 妙语连珠技能 - 选错时获得重试机会
                 if (SkillManager.Instance != null && SkillManager.Instance.TryUseEloquence())
                 {
-                    OnAnswerResult.Invoke(
-                        AnswerOutcome.Wrong,
-                        feedbackText + "\n妙语连珠生效！再试一次"
-                    );
+                    OnAnswerResult.Invoke(AnswerOutcome.Wrong, feedbackText + EloSuffix);
                     state = GameState.Await; // 重新进入等待状态
                     return; // 不扣血，不进入下一对话
                 }
@@ -653,6 +685,12 @@ namespace MaskGame.Managers
         /// </summary>
         public void RestoreHealth(int amount)
         {
+            if (kernelOn)
+            {
+                KernelHeal(amount);
+                return;
+            }
+
             int oldHealth = socialBattery;
             socialBattery = Mathf.Min(socialBattery + amount, gameConfig.maxHealth);
 
@@ -670,6 +708,26 @@ namespace MaskGame.Managers
         private IEnumerator AdvanceToNextDay()
         {
             yield return new WaitForSeconds(2f);
+
+            if (kernelOn)
+            {
+                KernelAdvance();
+                OnDayChanged.Invoke(currentDay);
+
+                if (kernelState.Phase == Kernel.GamePhase.GameWon)
+                {
+                    GameWin();
+                    yield break;
+                }
+
+                if (!KernelLoad())
+                {
+                    GameOver();
+                    yield break;
+                }
+
+                yield break;
+            }
 
             currentDay++;
             currentEncounterIndex = 0;
