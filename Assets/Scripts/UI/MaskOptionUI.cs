@@ -132,6 +132,11 @@ namespace MaskGame.UI
         public void SetOptionText(string text)
         {
             optionText = text;
+
+            if (tooltipPanel != null && tooltipPanel.activeSelf && tooltipText != null)
+            {
+                tooltipText.text = optionText;
+            }
         }
 
         /// <summary>

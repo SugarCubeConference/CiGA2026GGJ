@@ -61,17 +61,13 @@ namespace MaskGame.Managers
         public float MusicVolume => musicVolume;
         public float SFXVolume => sfxVolume;
 
-
         private void Awake()
         {
-
             if (Instance == null)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 LoadVolumeSettings();
-                
-                
 
                 // 如果没有音效AudioSource，创建一个
                 if (sfxSource == null)
@@ -80,7 +76,7 @@ namespace MaskGame.Managers
                     sfxSource.playOnAwake = false;
                     sfxSource.loop = false;
                 }
-                
+
                 // 监听场景加载事件
                 SceneManager.sceneLoaded += OnSceneLoaded;
             }
@@ -100,22 +96,26 @@ namespace MaskGame.Managers
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // 当加载到Main场景时，播放常规BGM
-            if (scene.name == "Main")
+            if (IsNormalBgmScene(scene.name))
             {
                 PlayNormalBGM();
             }
-            else if ((scene.name == "GameWin"||scene.name=="GameOver") && bgmSource != null)
+            else if ((scene.name == "GameWin" || scene.name == "GameOver") && bgmSource != null)
             {
                 bgmSource.Stop();
             }
         }
 
-    private void Start()
+        private static bool IsNormalBgmScene(string sceneName)
+        {
+            return sceneName == "Main" || sceneName == "Menu";
+        }
+
+        private void Start()
         {
             // 第一次启动时根据场景播放BGM
             string sceneName = SceneManager.GetActiveScene().name;
-            if (sceneName == "Main")
+            if (IsNormalBgmScene(sceneName))
             {
                 PlayNormalBGM();
             }
